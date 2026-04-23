@@ -46,6 +46,18 @@ router.get('/users', adminProtect, async (req, res) => {
   }
 });
 
+// @GET /api/admin/users/:id/details
+router.get('/users/:id/details', adminProtect, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const ads = await Ad.find({ userId: req.params.id }).sort({ createdAt: -1 });
+    res.json({ user, ads });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @PUT /api/admin/users/:id/ban
 router.put('/users/:id/ban', adminProtect, async (req, res) => {
   try {

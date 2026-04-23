@@ -7,7 +7,6 @@ import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 import UsersPage from './pages/UsersPage';
 import AdsPage from './pages/AdsPage';
-import ShopsPage from './pages/ShopsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import SupportPage from './pages/SupportPage';
 
@@ -15,7 +14,6 @@ const NAV = [
   { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { key: 'users', label: 'Users', icon: <Users size={18} /> },
   { key: 'ads', label: 'Ads', icon: <FileText size={18} /> },
-  { key: 'shops', label: 'Shops', icon: <Store size={18} /> },
   { key: 'categories', label: 'Categories', icon: <Tag size={18} /> },
   { key: 'support',    label: 'Support',    icon: <LifeBuoy size={18} /> },
 ];
@@ -24,7 +22,6 @@ const PAGES = {
   dashboard: <Dashboard />,
   users: <UsersPage />,
   ads: <AdsPage />,
-  shops: <ShopsPage />,
   categories: <CategoriesPage />,
   support:    <SupportPage />,
 };
