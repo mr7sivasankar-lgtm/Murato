@@ -281,8 +281,13 @@ export default function BannersPage() {
                   <button className="btn btn-ghost btn-sm" style={{ flex: 1, justifyContent: 'center', border: '1.5px solid var(--border)' }} onClick={() => setEditBanner(banner)}>
                     <Edit2 size={14} /> Edit
                   </button>
-                  <button className={`btn btn-sm ${banner.isActive ? 'btn-warning' : 'btn-success'}`} style={{ flex: 1, justifyContent: 'center' }} onClick={() => toggleActive(banner._id)}>
-                    <Power size={14} /> {banner.isActive ? 'Pause' : 'Activate'}
+                  <button
+                    className="btn btn-sm btn-warning"
+                    style={{ flex: 1, justifyContent: 'center', opacity: banner.isActive ? 1 : 0.5 }}
+                    onClick={() => toggleActive(banner._id)}
+                    title={banner.isActive ? 'Pause this banner' : 'Click to re-activate'}
+                  >
+                    <Power size={14} /> Pause
                   </button>
                   <button className="btn btn-sm btn-danger" style={{ padding: '0 12px' }} onClick={() => handleDelete(banner._id)}>
                     <Trash2 size={14} />
