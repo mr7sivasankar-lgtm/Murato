@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, ChevronRight, Loader } from 'lucide-react';
 import { Player } from '@lottiefiles/react-lottie-player';
@@ -7,6 +7,61 @@ import { PRODUCT_CATEGORIES } from '../data/categories';
 import LocationPicker from '../components/LocationPicker';
 import api from '../api/axios';
 import AdCard from '../components/AdCard';
+
+/* ── Auto-scrolling Banner Carousel ── */
+function BannerCarousel({ banners, navigate }) {
+  const [active, setActive] = useState(0);
+  const ref = useRef(null);
+  const timer = useRef(null);
+
+  const goTo = (i) => {
+    setActive(i);
+    ref.current?.children[i]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+  };
+
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    timer.current = setInterval(() => {
+      setActive(prev => {
+        const next = (prev + 1) % banners.length;
+        ref.current?.children[next]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+        return next;
+      });
+    }, 3500);
+    return () => clearInterval(timer.current);
+  }, [banners.length]);
+
+  return (
+    <div className="container" style={{ marginTop: 16 }}>
+      {/* Scroll container — same style/size as hero-banner */}
+      <div ref={ref} style={{ display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', scrollSnapType: 'x mandatory', gap: 0, borderRadius: 20, boxShadow: '0 4px 20px rgba(26,43,95,0.14)' }}>
+        {banners.map((banner, i) => (
+          <div
+            key={banner._id}
+            onClick={() => {
+              if (banner.targetUserId?._id || banner.targetUserId) {
+                navigate(`/seller/${banner.targetUserId?._id || banner.targetUserId}`);
+              }
+            }}
+            style={{ minWidth: '100%', height: 140, flexShrink: 0, scrollSnapAlign: 'start', cursor: banner.targetUserId ? 'pointer' : 'default', position: 'relative', overflow: 'hidden', borderRadius: 20 }}
+          >
+            <img src={banner.imageUrl} alt="Promotion" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          </div>
+        ))}
+      </div>
+
+      {/* Dot indicators */}
+      {banners.length > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
+          {banners.map((_, i) => (
+            <button key={i} onClick={() => goTo(i)} style={{ width: active === i ? 20 : 7, height: 7, borderRadius: 4, background: active === i ? 'var(--navy)' : 'var(--border)', border: 'none', transition: 'all 0.3s', padding: 0, cursor: 'pointer' }} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -136,30 +191,8 @@ export default function HomePage() {
         </form>
       </div>
 
-      {/* Banners */}
-      {banners.length > 0 && (
-        <div style={{ padding: '0 20px', marginTop: 16 }}>
-          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollbarWidth: 'none', snapType: 'x mandatory' }}>
-            {banners.map((banner) => (
-              <div 
-                key={banner._id} 
-                onClick={() => navigate(`/seller/${banner.targetUserId?._id || banner.targetUserId}`)}
-                style={{ 
-                  minWidth: '100%', 
-                  height: 140, 
-                  borderRadius: 16, 
-                  overflow: 'hidden', 
-                  scrollSnapAlign: 'center', 
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-                }}
-              >
-                <img src={banner.imageUrl} alt="Promotion" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* ── Admin Promo Banners ── */}
+      {banners.length > 0 && <BannerCarousel banners={banners} navigate={navigate} />}
 
       {/* Hero */}
       <div className="container" style={{ paddingTop: 16 }}>

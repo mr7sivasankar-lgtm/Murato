@@ -1,7 +1,94 @@
-import { useState, useEffect } from 'react';
-import { Image, Trash2, Plus, Power, Link, MapPin, User } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Image, Trash2, Plus, Power, MapPin, User, Search } from 'lucide-react';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
+
+/* ── Nominatim location autocomplete ── */
+function LocationInput({ value, onChange }) {
+  const [query, setQuery]         = useState(value || '');
+  const [suggestions, setSugs]   = useState([]);
+  const [open, setOpen]          = useState(false);
+  const timerRef                 = useRef(null);
+
+  const search = async (q) => {
+    if (q.length < 3) { setSugs([]); return; }
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=in&format=json&addressdetails=1&limit=7&accept-language=en`
+      );
+      const data = await res.json();
+      // Deduplicate by city name
+      const seen = new Set();
+      const filtered = data.filter(r => {
+        const a = r.address;
+        const city = a.city || a.town || a.village || a.county || '';
+        if (!city || seen.has(city.toLowerCase())) return false;
+        seen.add(city.toLowerCase());
+        return true;
+      });
+      setSugs(filtered);
+      setOpen(true);
+    } catch { setSugs([]); }
+  };
+
+  const handleChange = (v) => {
+    setQuery(v);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => search(v), 400);
+  };
+
+  const select = (r) => {
+    const a = r.address;
+    const city = a.city || a.town || a.village || a.county || '';
+    setQuery(city);
+    onChange(city);
+    setSugs([]);
+    setOpen(false);
+  };
+
+  const formatSug = (r) => {
+    const a = r.address;
+    const city    = a.city || a.town || a.village || a.county || '';
+    const district= a.state_district || a.county || '';
+    const state   = a.state || '';
+    const pin     = a.postcode || '';
+    const parts   = [city, district !== city ? district : '', state].filter(Boolean);
+    return { label: parts.join(', '), pin };
+  };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative' }}>
+        <Search size={14} color="var(--text-secondary)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+        <input
+          className="form-input"
+          style={{ paddingLeft: 34 }}
+          placeholder="Type city, area or pincode… (leave blank = all users)"
+          value={query}
+          onChange={e => handleChange(e.target.value)}
+          onFocus={() => suggestions.length && setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 180)}
+        />
+      </div>
+      {open && suggestions.length > 0 && (
+        <div style={{ position: 'absolute', zIndex: 999, top: '100%', left: 0, right: 0, background: 'white', border: '1.5px solid var(--border)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', marginTop: 4, overflow: 'hidden', maxHeight: 240, overflowY: 'auto' }}>
+          {suggestions.map((r, i) => {
+            const { label, pin } = formatSug(r);
+            return (
+              <div key={i} onMouseDown={() => select(r)} style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'background 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#f0f3fc'}
+                onMouseLeave={e => e.currentTarget.style.background = 'white'}
+              >
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{label}</span>
+                {pin && <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--navy)', background: '#eef2ff', padding: '2px 8px', borderRadius: 20 }}>{pin}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function BannersPage() {
   const [banners, setBanners] = useState([]);
@@ -172,17 +259,11 @@ export default function BannersPage() {
               </label>
             </div>
 
-            {/* Target City */}
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <MapPin size={14} /> Target City / Location
               </label>
-              <input
-                className="form-input"
-                placeholder="e.g. Hyderabad (leave empty = show to ALL users)"
-                value={targetCity}
-                onChange={e => setTargetCity(e.target.value)}
-              />
+              <LocationInput value={targetCity} onChange={setTargetCity} />
               <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
                 If filled, this banner will ONLY appear for users in this city. Leave blank for all users.
               </p>
