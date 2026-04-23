@@ -19,16 +19,45 @@ const supportRoutes    = require('./routes/support');
 const app = express();
 const server = http.createServer(app);
 
+// CORS setup
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://murato.vercel.app',
+  'https://murato-admin.vercel.app',
+  // Allow all Vercel preview domains dynamically
+  /^https:\/\/murato.*\.vercel\.app$/
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    
+    // Check if origin matches exactly or matches the regex
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (allowedOrigin instanceof RegExp) {
+        return allowedOrigin.test(origin);
+      }
+      return allowedOrigin === origin;
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
 // Socket.io setup
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
   },
 });
 
 // Middleware
-app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
