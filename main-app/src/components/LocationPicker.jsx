@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { MapPin, Navigation, Search, X, ChevronRight, Loader } from 'lucide-react';
+import MapPinPicker from './MapPinPicker';
+import { useLanguage } from '../context/LanguageContext';
 
 // Fuzzy match helper
 function fuzzyMatch(str, query) {
@@ -17,10 +19,12 @@ function fuzzyMatch(str, query) {
 }
 
 export default function LocationPicker({ isOpen, onClose, onSelect, currentCity }) {
+  const { t } = useLanguage();
   const [search,      setSearch]      = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [detecting,   setDetecting]   = useState(false);
   const [loading,     setLoading]     = useState(false);
+  const [showMap,     setShowMap]     = useState(false);
   const debounceRef = useRef(null);
   const inputRef    = useRef(null);
 
@@ -109,8 +113,8 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
         {/* Header */}
         <div style={{ padding: '16px 20px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
           <div>
-            <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--navy)' }}>Change Location</h3>
-            {currentCity && <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Current: {currentCity}</p>}
+            <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--navy)' }}>{t('changeLocation')}</h3>
+            {currentCity && <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('currentLocation')}: {currentCity}</p>}
           </div>
           <button onClick={onClose} style={{ background: '#f3f4f6', border: 'none', borderRadius: 8, padding: 6, cursor: 'pointer', display: 'flex' }}>
             <X size={18} />
@@ -129,7 +133,7 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
               ref={inputRef}
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search city, town, village..."
+              placeholder={t('searchCity')}
               style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', padding: '13px 0', fontSize: 15 }}
             />
             {loading && <Loader size={14} color="#9ca3af" style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />}
@@ -137,20 +141,28 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
           </div>
 
           {/* GPS detect */}
-          <button
-            onClick={detectGPS}
-            disabled={detecting}
-            style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px solid var(--border)', background: detecting ? '#f0f3fc' : 'white', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 20, transition: 'background 0.2s' }}
+          <button onClick={detectGPS} disabled={detecting}
+            style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px solid var(--border)', background: detecting ? '#f0f3fc' : 'white', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 10, transition: 'background 0.2s' }}
           >
             <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f0f3fc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {detecting
-                ? <Loader size={18} color="var(--navy)" style={{ animation: 'spin 1s linear infinite' }} />
-                : <Navigation size={18} color="var(--navy)" />
-              }
+              {detecting ? <Loader size={18} color="var(--navy)" style={{ animation: 'spin 1s linear infinite' }} /> : <Navigation size={18} color="var(--navy)" />}
             </div>
             <div style={{ textAlign: 'left' }}>
-              <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--navy)' }}>{detecting ? 'Detecting...' : 'Use my current location'}</p>
-              <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Auto-detect via GPS</p>
+              <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--navy)' }}>{detecting ? t('detecting') : t('useCurrentLocation')}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('autoGPS')}</p>
+            </div>
+          </button>
+
+          {/* Pin on Map */}
+          <button onClick={() => setShowMap(true)}
+            style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px solid var(--border)', background: 'white', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 20 }}
+          >
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <MapPin size={18} color="#10b981" />
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <p style={{ fontWeight: 700, fontSize: 14, color: '#10b981' }}>{t('pinOnMap')}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t('dragMarker')}</p>
             </div>
           </button>
 
@@ -183,6 +195,13 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
           )}
         </div>
       </div>
+
+      {/* Map Pin Picker */}
+      <MapPinPicker
+        isOpen={showMap}
+        onClose={() => setShowMap(false)}
+        onConfirm={(loc) => { onSelect(loc); setShowMap(false); onClose(); }}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, ChevronRight, Loader } from 'lucide-react';
 import { Player } from '@lottiefiles/react-lottie-player';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { PRODUCT_CATEGORIES } from '../data/categories';
 import LocationPicker from '../components/LocationPicker';
 import api from '../api/axios';
@@ -66,6 +67,7 @@ function BannerCarousel({ banners, navigate }) {
 export default function HomePage() {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
+  const { t } = useLanguage();
   const [activeCategory, setActiveCategory] = useState('');
   const [ads,       setAds]       = useState([]);
   const [featured,  setFeatured]  = useState([]);
@@ -162,11 +164,11 @@ export default function HomePage() {
           >
             <MapPin size={18} color="var(--navy)" strokeWidth={2.5} />
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Location</div>
+              <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('locationLabel')}</div>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 3 }}>
                 {locLoading
-                  ? <><Loader size={10} style={{ animation: 'spin 1s linear infinite' }} /> Detecting...</>
-                  : <>{displayCity || 'Set Location'} <ChevronRight size={10} /></>
+                  ? <><Loader size={10} style={{ animation: 'spin 1s linear infinite' }} /> {t('detecting')}</>
+                  : <>{displayCity || t('setLocation')} <ChevronRight size={10} /></>
                 }
               </div>
             </div>
@@ -184,7 +186,7 @@ export default function HomePage() {
           <div className="search-bar">
             <Search size={18} color="var(--text-muted)" />
             <input
-              placeholder='Search "cement near me"'
+              placeholder={t('searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -214,9 +216,9 @@ export default function HomePage() {
       <div style={{ marginBottom: 28 }}>
         <div style={{ padding: '0 20px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>
-            Browse Categories <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginLeft: 4 }}>{PRODUCT_CATEGORIES.length}+</span>
+            {t('browseCategories')} <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginLeft: 4 }}>{PRODUCT_CATEGORIES.length}+</span>
           </p>
-          <button className="see-more">See all</button>
+          <button className="see-more">{t('seeAll')}</button>
         </div>
         <div className="category-scroll">
           {PRODUCT_CATEGORIES.map((cat) => (
@@ -267,10 +269,10 @@ export default function HomePage() {
         <div className="section">
           <div className="section-header">
             <p className="section-title">
-              {activeCategory ? activeCategory : displayCity ? `Near ${displayCity}` : 'All Listings'}{' '}
+              {activeCategory ? activeCategory : displayCity ? `${t('near')} ${displayCity}` : 'All Listings'}{' '}
               <span>{ads.length}+</span>
             </p>
-            <button className="see-more" onClick={() => navigate('/search')}>See all</button>
+            <button className="see-more" onClick={() => navigate('/search')}>{t('seeAll')}</button>
           </div>
 
           {loading ? (
@@ -286,9 +288,9 @@ export default function HomePage() {
           ) : ads.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">🏗️</div>
-              <p className="empty-title">No listings yet</p>
-              <p className="empty-subtitle">Be the first to post{activeCategory ? ` a ${activeCategory}` : ''}!</p>
-              <button className="btn btn-primary" style={{ width: 'auto', padding: '12px 28px' }} onClick={() => navigate('/sell')}>Post Ad</button>
+              <p className="empty-title">{t('noListings')}</p>
+              <p className="empty-subtitle">{t('beFirst')}</p>
+              <button className="btn btn-primary" style={{ width: 'auto', padding: '12px 28px' }} onClick={() => navigate('/sell')}>{t('postAd')}</button>
             </div>
           ) : (
             <div className="ads-grid">

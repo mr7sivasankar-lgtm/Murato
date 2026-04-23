@@ -1,8 +1,10 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, MessageCircle, Plus, ClipboardList, User } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function BottomNav() {
   const location = useLocation();
+  const { t } = useLanguage();
   const hide = ['/login', '/register', '/chat/'].some(p => location.pathname.startsWith(p));
   const isChatRoom = location.pathname.match(/^\/chat\/.+/);
   if (hide && isChatRoom) return null;
@@ -11,23 +13,23 @@ export default function BottomNav() {
     <nav className="bottom-nav">
       <NavLink to="/" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
         <Home size={22} />
-        <span>Home</span>
+        <span>{t('home')}</span>
       </NavLink>
       <NavLink to="/chats" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
         <MessageCircle size={22} />
-        <span>Chats</span>
+        <span>{t('chats')}</span>
       </NavLink>
       <NavLink to="/sell" className="nav-sell">
         <div className="fab-sell"><Plus size={26} /></div>
-        <span className="fab-label">SELL</span>
+        <span className="fab-label">{t('sell')}</span>
       </NavLink>
       <NavLink to="/my-ads" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
         <ClipboardList size={22} />
-        <span>My Ads</span>
+        <span>{t('myAds')}</span>
       </NavLink>
       <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
         <User size={22} />
-        <span>Profile</span>
+        <span>{t('profile')}</span>
       </NavLink>
     </nav>
   );
