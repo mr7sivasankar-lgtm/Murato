@@ -32,7 +32,7 @@ function BannerCarousel({ banners, navigate }) {
   }, [banners.length]);
 
   return (
-    <div className="container" style={{ marginTop: 16 }}>
+    <div className="container" style={{ marginBottom: 24 }}>
       {/* Scroll container — same style/size as hero-banner */}
       <div ref={ref} style={{ display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', scrollSnapType: 'x mandatory', gap: 0, borderRadius: 20, boxShadow: '0 4px 20px rgba(26,43,95,0.14)' }}>
         {banners.map((banner, i) => (
@@ -192,8 +192,6 @@ export default function HomePage() {
         </form>
       </div>
 
-      {/* ── Admin Promo Banners ── */}
-      {banners.length > 0 && <BannerCarousel banners={banners} navigate={navigate} />}
 
       {/* Hero */}
       <div className="container" style={{ paddingTop: 16 }}>
@@ -208,6 +206,9 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* ── Admin Promo Banners — below hero ── */}
+      {banners.length > 0 && <BannerCarousel banners={banners} navigate={navigate} />}
 
       {/* Categories — full page width */}
       <div style={{ marginBottom: 28 }}>
