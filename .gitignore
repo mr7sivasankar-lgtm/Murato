@@ -1,0 +1,33 @@
+# ── Dependencies ──────────────────────────────
+node_modules/
+**/node_modules/
+
+# ── Environment secrets (NEVER commit) ────────
+.env
+.env.local
+.env.production
+**/.env
+**/.env.local
+**/.env.production
+
+# ── Build outputs ──────────────────────────────
+dist/
+build/
+**/dist/
+**/build/
+
+# ── Capacitor Android (generated) ─────────────
+main-app/android/
+admin-app/android/
+
+# ── Logs ──────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── OS files ──────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Editor ────────────────────────────────────
+.vscode/
+.idea/
