@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronRight, Heart, ClipboardList, MessageCircle,
-  Settings, LogOut, Star, MapPin, Phone, MessageSquare, Edit3, LifeBuoy, X,
+  Settings, LogOut, Star, MapPin, Phone, MessageSquare, Edit3, LifeBuoy, X, Lock,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
@@ -28,6 +28,10 @@ export default function ProfilePage() {
   const [showSupport,   setShowSupport]   = useState(false);
   const [supportSubject, setSupportSubject] = useState('');
   const [supportMsg,    setSupportMsg]    = useState('');
+  const [showChangePin, setShowChangePin] = useState(false);
+  const [currentPin,    setCurrentPin]    = useState('');
+  const [newPin,        setNewPin]        = useState('');
+  const [changingPin,   setChangingPin]   = useState(false);
   const [sending,       setSending]       = useState(false);
 
   useEffect(() => {
@@ -36,6 +40,19 @@ export default function ProfilePage() {
       .then(r => setAdsCount(r.data?.length || 0))
       .catch(() => {});
   }, []);
+
+  const handleChangePinSubmit = async () => {
+    if (!/^\d{4}$/.test(newPin)) { toast.error('New PIN must be 4 digits'); return; }
+    setChangingPin(true);
+    try {
+      await api.put('/auth/change-pin', { currentPin, newPin });
+      toast.success('PIN changed successfully! 🔒');
+      setShowChangePin(false);
+      setCurrentPin(''); setNewPin('');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to change PIN');
+    } finally { setChangingPin(false); }
+  };
 
   const handleLogout = () => {
     logout();
@@ -151,6 +168,7 @@ export default function ProfilePage() {
 
       <div style={{ background: 'white', marginBottom: 12, boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
         <MenuItem icon={<Settings size={18} />} label="Settings" sub="Edit profile, contact, location" onClick={() => navigate('/settings')} color="#6b7280" />
+        <MenuItem icon={<Lock size={18} />} label="Change PIN" sub="Update your 4-digit login PIN" onClick={() => setShowChangePin(true)} color="#8b5cf6" />
         <MenuItem icon={<LifeBuoy size={18} />} label="Support" sub="Report an issue or get help" onClick={() => setShowSupport(true)} color="#f59e0b" />
       </div>
 
@@ -163,6 +181,30 @@ export default function ProfilePage() {
           <ChevronRight size={16} color="var(--danger)" />
         </div>
       </div>
+
+      {/* ── Change PIN Sheet ── */}
+      {showChangePin && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 3000 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} onClick={() => setShowChangePin(false)} />
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '24px 24px 0 0', padding: '20px 20px 40px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+              <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--navy)' }}>🔒 Change PIN</h3>
+              <button onClick={() => setShowChangePin(false)} style={{ background: '#f3f4f6', border: 'none', borderRadius: 8, padding: 6, cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Current PIN</label>
+              <input className="form-input" type="password" inputMode="numeric" maxLength={4} placeholder="••••" value={currentPin} onChange={e => setCurrentPin(e.target.value.replace(/\D/g,'').slice(0,4))} style={{ letterSpacing: 8, fontSize: 20, textAlign: 'center' }} />
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>New PIN</label>
+              <input className="form-input" type="password" inputMode="numeric" maxLength={4} placeholder="••••" value={newPin} onChange={e => setNewPin(e.target.value.replace(/\D/g,'').slice(0,4))} style={{ letterSpacing: 8, fontSize: 20, textAlign: 'center' }} />
+            </div>
+            <button className="btn btn-primary" style={{ width: '100%', borderRadius: 50 }} onClick={handleChangePinSubmit} disabled={changingPin}>
+              {changingPin ? 'Saving...' : 'Update PIN'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Support Sheet ── */}
       {showSupport && (

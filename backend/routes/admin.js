@@ -29,7 +29,7 @@ router.get('/stats', adminProtect, async (req, res) => {
 router.get('/users', adminProtect, async (req, res) => {
   try {
     const { q, page = 1, limit = 20 } = req.query;
-    const filter = {};
+    const filter = { phone: { $ne: 'admin-internal' } };
     if (q) filter.$or = [{ name: new RegExp(q, 'i') }, { phone: new RegExp(q, 'i') }];
 
     const skip = (Number(page) - 1) * Number(limit);

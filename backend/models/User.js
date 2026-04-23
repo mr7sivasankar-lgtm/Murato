@@ -25,6 +25,9 @@ const userSchema = new mongoose.Schema(
 
     isActive: { type: Boolean, default: true },
     isBanned: { type: Boolean, default: false },
+
+    // 4-digit login PIN (stored as string)
+    pin: { type: String, default: '' },
   },
   { timestamps: true }
 );

@@ -15,7 +15,6 @@ router.post('/login', async (req, res) => {
     if (!email || !password)
       return res.status(400).json({ message: 'Email and password required' });
 
-    // Validate against .env admin credentials
     if (
       email.toLowerCase() !== (process.env.ADMIN_EMAIL || '').toLowerCase() ||
       password !== process.env.ADMIN_PASSWORD
@@ -23,12 +22,11 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid admin credentials' });
     }
 
-    // Find or create admin user record
     let user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       user = await User.create({
         name:  'Admin',
-        phone: 'admin-internal',  // placeholder, unique
+        phone: 'admin-internal',
         email: email.toLowerCase(),
       });
     }
@@ -44,55 +42,139 @@ router.post('/login', async (req, res) => {
 });
 
 
-// @POST /api/auth/register  — Direct login/register with phone + name (no OTP)
-router.post('/register', async (req, res) => {
+// ── PIN-based user auth ─────────────────────────────────────────────────────
+
+// Helper to build the user response object
+const userPayload = (u) => ({
+  _id:               u._id,
+  name:              u.name,
+  phone:             u.phone,
+  avatar:            u.avatar,
+  location:          u.location,
+  businessName:      u.businessName,
+  contactMode:       u.contactMode,
+  whatsappAvailable: u.whatsappAvailable,
+  ratingAvg:         u.ratingAvg,
+  ratingCount:       u.ratingCount,
+});
+
+// @POST /api/auth/check  — Check if phone is already registered
+router.post('/check', async (req, res) => {
   try {
-    const { phone, name } = req.body;
+    const { phone } = req.body;
     if (!phone) return res.status(400).json({ message: 'Phone is required' });
 
-    const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length < 10) return res.status(400).json({ message: 'Enter a valid phone number' });
-
+    const cleaned   = phone.replace(/\D/g, '');
     const normalised = `+91${cleaned.slice(-10)}`;
 
-    // Find or create user
-    let user = await User.findOne({ phone: normalised });
-    const isNew = !user;
+    const user = await User.findOne({ phone: normalised });
+    res.json({ exists: !!user, hasPin: !!(user?.pin) });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
-    if (!user) {
-      if (!name || name.trim().length < 2)
-        return res.status(400).json({ message: 'Name is required for new users' });
-      user = await User.create({ name: name.trim(), phone: normalised });
-    } else if (name && name.trim().length >= 2 && user.name === 'New User') {
-      // Update placeholder name for old accounts
-      user.name = name.trim();
-      await user.save();
-    }
 
-    if (user.isBanned) return res.status(403).json({ message: 'Account banned' });
+// @POST /api/auth/register  — New user: phone + name + pin
+router.post('/register', async (req, res) => {
+  try {
+    const { phone, name, pin } = req.body;
+
+    if (!phone) return res.status(400).json({ message: 'Phone is required' });
+    if (!name || name.trim().length < 2) return res.status(400).json({ message: 'Name is required' });
+    if (!pin || !/^\d{4}$/.test(pin)) return res.status(400).json({ message: 'A 4-digit PIN is required' });
+
+    const cleaned    = phone.replace(/\D/g, '');
+    const normalised = `+91${cleaned.slice(-10)}`;
+
+    const existing = await User.findOne({ phone: normalised });
+    if (existing) return res.status(400).json({ message: 'This number is already registered. Please log in.' });
+
+    const user = await User.create({ name: name.trim(), phone: normalised, pin });
 
     res.json({
-      isNew,
+      isNew: true,
       token: generateToken(user._id),
-      user: {
-        _id:               user._id,
-        name:              user.name,
-        phone:             user.phone,
-        avatar:            user.avatar,
-        location:          user.location,
-        businessName:      user.businessName,
-        contactMode:       user.contactMode,
-        whatsappAvailable: user.whatsappAvailable,
-        ratingAvg:         user.ratingAvg,
-        ratingCount:       user.ratingCount,
-      },
+      user:  userPayload(user),
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// @PUT /api/auth/profile — update name + location after OTP onboarding
+
+// @POST /api/auth/login-pin  — Returning user: phone + pin
+router.post('/login-pin', async (req, res) => {
+  try {
+    const { phone, pin } = req.body;
+
+    if (!phone) return res.status(400).json({ message: 'Phone is required' });
+    if (!pin)   return res.status(400).json({ message: 'PIN is required' });
+
+    const cleaned    = phone.replace(/\D/g, '');
+    const normalised = `+91${cleaned.slice(-10)}`;
+
+    const user = await User.findOne({ phone: normalised });
+    if (!user)     return res.status(404).json({ message: 'No account found for this number' });
+    if (user.isBanned) return res.status(403).json({ message: 'Account banned' });
+    if (user.pin !== pin) return res.status(401).json({ message: 'Incorrect PIN' });
+
+    res.json({
+      isNew: false,
+      token: generateToken(user._id),
+      user:  userPayload(user),
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+// @POST /api/auth/forgot-pin  — Return the existing PIN for a phone number
+router.post('/forgot-pin', async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ message: 'Phone is required' });
+
+    const cleaned    = phone.replace(/\D/g, '');
+    const normalised = `+91${cleaned.slice(-10)}`;
+
+    const user = await User.findOne({ phone: normalised });
+    if (!user) return res.status(404).json({ message: 'No account found for this number' });
+    if (!user.pin) return res.status(400).json({ message: 'No PIN set for this account' });
+
+    res.json({ pin: user.pin, name: user.name });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+// @PUT /api/auth/change-pin  — Change PIN (protected)
+router.put('/change-pin', protect, async (req, res) => {
+  try {
+    const { currentPin, newPin } = req.body;
+    if (!newPin || !/^\d{4}$/.test(newPin))
+      return res.status(400).json({ message: 'New PIN must be 4 digits' });
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // If user already has a PIN, verify the current one
+    if (user.pin && user.pin !== currentPin)
+      return res.status(401).json({ message: 'Current PIN is incorrect' });
+
+    user.pin = newPin;
+    await user.save();
+
+    res.json({ message: 'PIN updated successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+// @PUT /api/auth/profile — update name + location after registration
 router.put('/profile', protect, upload.single('avatar'), async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -122,18 +204,7 @@ router.put('/profile', protect, upload.single('avatar'), async (req, res) => {
     }
 
     await user.save();
-    res.json({
-      _id:              user._id,
-      name:             user.name,
-      phone:            user.phone,
-      avatar:           user.avatar,
-      location:         user.location,
-      businessName:     user.businessName,
-      contactMode:      user.contactMode,
-      whatsappAvailable:user.whatsappAvailable,
-      ratingAvg:        user.ratingAvg,
-      ratingCount:      user.ratingCount,
-    });
+    res.json(userPayload(user));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -142,12 +213,7 @@ router.put('/profile', protect, upload.single('avatar'), async (req, res) => {
 // @GET /api/auth/me
 router.get('/me', protect, async (req, res) => {
   const u = req.user;
-  res.json({
-    _id: u._id, name: u.name, phone: u.phone, avatar: u.avatar,
-    location: u.location, businessName: u.businessName,
-    contactMode: u.contactMode, whatsappAvailable: u.whatsappAvailable,
-    ratingAvg: u.ratingAvg, ratingCount: u.ratingCount,
-  });
+  res.json(userPayload(u));
 });
 
 module.exports = router;
