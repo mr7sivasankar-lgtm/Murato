@@ -223,7 +223,7 @@ export default function LoginPage() {
           Forgot PIN?
         </button>
         <button onClick={() => { localStorage.removeItem('murato_phone'); setPhone(''); setStep('phone'); }}
-          style={{ fontSize: 13, color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer' }}>
+          style={{ fontSize: 14, color: '#2563eb', fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', marginTop: 8 }}>
           Use a different number
         </button>
       </div>

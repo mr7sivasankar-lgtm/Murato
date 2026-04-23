@@ -14,6 +14,7 @@ export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState('');
   const [ads,       setAds]       = useState([]);
   const [featured,  setFeatured]  = useState([]);
+  const [banners,   setBanners]   = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showLocPicker, setShowLocPicker] = useState(false);
@@ -52,7 +53,12 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => { fetchAds(); }, [activeCategory, displayCity]);
-  useEffect(() => { fetchFeatured(); }, []);
+  useEffect(() => { fetchFeatured(); fetchBanners(); }, []);
+
+  const fetchBanners = async () => {
+    try { const { data } = await api.get('/banners'); setBanners(data || []); }
+    catch { setBanners([]); }
+  };
 
   const fetchAds = async () => {
     try {
@@ -124,6 +130,31 @@ export default function HomePage() {
           </div>
         </form>
       </div>
+
+      {/* Banners */}
+      {banners.length > 0 && (
+        <div style={{ padding: '0 20px', marginTop: 16 }}>
+          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollbarWidth: 'none', snapType: 'x mandatory' }}>
+            {banners.map((banner) => (
+              <div 
+                key={banner._id} 
+                onClick={() => navigate(`/seller/${banner.targetUserId?._id || banner.targetUserId}`)}
+                style={{ 
+                  minWidth: '100%', 
+                  height: 140, 
+                  borderRadius: 16, 
+                  overflow: 'hidden', 
+                  scrollSnapAlign: 'center', 
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                }}
+              >
+                <img src={banner.imageUrl} alt="Promotion" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <div className="container" style={{ paddingTop: 16 }}>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { LayoutDashboard, Users, FileText, Store, Tag, LifeBuoy, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Store, Tag, LifeBuoy, LogOut, Image } from 'lucide-react';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -9,12 +9,14 @@ import UsersPage from './pages/UsersPage';
 import AdsPage from './pages/AdsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import SupportPage from './pages/SupportPage';
+import BannersPage from './pages/BannersPage';
 
 const NAV = [
   { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { key: 'users', label: 'Users', icon: <Users size={18} /> },
   { key: 'ads', label: 'Ads', icon: <FileText size={18} /> },
   { key: 'categories', label: 'Categories', icon: <Tag size={18} /> },
+  { key: 'banners', label: 'Banners', icon: <Image size={18} /> },
   { key: 'support',    label: 'Support',    icon: <LifeBuoy size={18} /> },
 ];
 
@@ -23,6 +25,7 @@ const PAGES = {
   users: <UsersPage />,
   ads: <AdsPage />,
   categories: <CategoriesPage />,
+  banners: <BannersPage />,
   support:    <SupportPage />,
 };
 

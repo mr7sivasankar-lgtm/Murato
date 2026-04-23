@@ -15,6 +15,7 @@ const categoriesRoutes = require('./routes/categories');
 const adminRoutes      = require('./routes/admin');
 const usersRoutes      = require('./routes/users');
 const supportRoutes    = require('./routes/support');
+const bannersRoutes    = require('./routes/banners');
 
 const app = express();
 const server = http.createServer(app);
@@ -77,6 +78,7 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/admin',      adminRoutes);
 app.use('/api/users',      usersRoutes);
 app.use('/api/support',    supportRoutes);
+app.use('/api/banners',    bannersRoutes);
 
 // Health check
 app.get('/', (_req, res) => {
