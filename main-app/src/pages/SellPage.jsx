@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { PRODUCT_CATEGORIES, SERVICE_CATEGORIES, UNIT_LABELS, PRICE_TYPE_LABELS } from '../data/categories';
 import LocationPicker from '../components/LocationPicker';
+import MapPinPicker from '../components/MapPinPicker';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
@@ -121,6 +122,7 @@ export default function SellPage() {
   const [images,    setImages]    = useState([]);
   const [submitting,setSubmitting] = useState(false);
   const [showLocPicker, setShowLocPicker] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const [detecting, setDetecting] = useState(false);
 
   // ── Product form ──────────────────────────────────────────────────────────
@@ -157,9 +159,9 @@ export default function SellPage() {
   const [sForm, setSForm] = useState({
     title:            editAd?.title || '',
     category:         editAd?.category || '',
+    categories:       editAd?.categories ? editAd.categories.split(',') : (editAd?.category ? [editAd.category] : []),
     subcategories:    editAd?.subcategories || (editAd?.subcategory ? [editAd.subcategory] : []),
     itemTypes:        editAd?.itemType   ? [editAd.itemType]    : [],
-    skills:           editAd?.skills || [],   // array of strings (checkboxes)
     experienceYears:  editAd?.experienceYears || '',
     teamSize:         editAd?.teamSize || 1,
     projectsDone:     editAd?.projectsDone || '',
@@ -222,11 +224,19 @@ export default function SellPage() {
     setShowLocPicker(false);
   };
 
+  // ── MapPinPicker callback ─────────────────────────────────────────────────
+  const onMapConfirm = ({ city, area, lat, lng }) => {
+    if (adType === 'product') { pSet('city', city); pSet('area', area || ''); pSet('lat', lat); pSet('lng', lng); }
+    else                      { sSet('city', city); sSet('area', area || ''); sSet('lat', lat); sSet('lng', lng); }
+    setShowMapPicker(false);
+  };
+
   // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     const form = adType === 'product' ? pForm : sForm;
     if (!form.title.trim()) { toast.error('Title is required'); return; }
-    if (!form.category)     { toast.error('Category is required'); return; }
+    if (adType === 'product' && !pForm.category) { toast.error('Category is required'); return; }
+    if (adType === 'service' && !sForm.categories.length) { toast.error('Select at least one service category'); return; }
     if (!form.price)        { toast.error('Price is required'); return; }
     if (!form.city.trim())  { toast.error('City is required'); return; }
 
@@ -245,6 +255,9 @@ export default function SellPage() {
         fd.set('subcategory', pForm.subcategories[0]);
       if (adType === 'service' && sForm.subcategories.length)
         fd.set('subcategory', sForm.subcategories[0]);
+      // Primary category for service
+      if (adType === 'service' && sForm.categories.length)
+        fd.set('category', sForm.categories[0]);
 
       images.forEach(img => fd.append('images', img));
 
@@ -264,20 +277,20 @@ export default function SellPage() {
   };
 
   // ── Derived data ──────────────────────────────────────────────────────────
-  const selectedPCat = PRODUCT_CATEGORIES.find(c => c.name === pForm.category);
-  const selectedSCat = SERVICE_CATEGORIES.find(c => c.name === sForm.category);
-  const pSubcats     = (selectedPCat?.subcategories || []).map(s => s.name);
-  const sSubcats     = (selectedSCat?.subcategories || []).map(s => s.name);
-  // Sub-types: flatten all types from all selected subcategories
+  const selectedPCat  = PRODUCT_CATEGORIES.find(c => c.name === pForm.category);
+  const selectedSCats = SERVICE_CATEGORIES.filter(c => sForm.categories.includes(c.name));
+  const pSubcats = (selectedPCat?.subcategories || []).map(s => s.name);
+  const sSubcats = [...new Set(selectedSCats.flatMap(c => (c.subcategories || []).map(s => s.name)))];
+  // Sub-types: from all selected subcats across all selected service categories
   const pTypes = (selectedPCat?.subcategories || [])
     .filter(s => pForm.subcategories.includes(s.name))
     .flatMap(s => s.types || [])
     .filter((v, i, a) => a.indexOf(v) === i);
-  const sTypes = (selectedSCat?.subcategories || [])
+  const sTypes = selectedSCats
+    .flatMap(c => c.subcategories || [])
     .filter(s => sForm.subcategories.includes(s.name))
     .flatMap(s => s.types || [])
     .filter((v, i, a) => a.indexOf(v) === i);
-  const suggestedSkills = selectedSCat?.subcategories?.flatMap(s => [s.name, ...(s.types || [])]) || [];
 
   // ── Type selection screen ─────────────────────────────────────────────────
   if (!adType) {
@@ -364,24 +377,49 @@ export default function SellPage() {
             <input className="form-input" placeholder={isProduct ? 'e.g., UltraTech OPC Cement — 50kg bags' : 'e.g., Experienced Mason for House Construction'} value={form.title} onChange={e => fSet('title', e.target.value)} />
           </div>
 
-          {/* Category dropdown */}
-          <CatSelect
-            label="Category *"
-            value={form.category}
-            onChange={v => { fSet('category', v); fSet('subcategories', []); }}
-            options={isProduct ? PRODUCT_CATEGORIES : SERVICE_CATEGORIES}
-            placeholder="Select Category"
-          />
-
-          {/* Manual category override */}
-          {!form.category && (
+          {/* Product: single category dropdown | Service: multi-chip grid */}
+          {isProduct ? (
+            <>
+              <CatSelect
+                label="Category *"
+                value={pForm.category}
+                onChange={v => { pSet('category', v); pSet('subcategories', []); }}
+                options={PRODUCT_CATEGORIES}
+                placeholder="Select Category"
+              />
+              {!pForm.category && (
+                <div className="form-group">
+                  <label className="form-label" style={{ color: 'var(--text-muted)' }}>Or type manually</label>
+                  <input className="form-input" placeholder="Type category name..." value={pForm.manualCategory || ''} onChange={e => { pSet('manualCategory', e.target.value); pSet('category', e.target.value); }} />
+                </div>
+              )}
+            </>
+          ) : (
             <div className="form-group">
-              <label className="form-label" style={{ color: 'var(--text-muted)' }}>Or type manually</label>
-              <input className="form-input" placeholder="Type category name..." value={form.manualCategory || ''} onChange={e => { fSet('manualCategory', e.target.value); fSet('category', e.target.value); }} />
+              <label className="form-label">Service Categories * (select all you offer)</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {SERVICE_CATEGORIES.map(cat => {
+                  const sel = sForm.categories.includes(cat.name);
+                  return (
+                    <button key={cat.name} type="button"
+                      onClick={() => {
+                        const next = sel
+                          ? sForm.categories.filter(c => c !== cat.name)
+                          : [...sForm.categories, cat.name];
+                        sSet('categories', next);
+                        sSet('subcategories', []);
+                      }}
+                      style={{ padding: '7px 12px', borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, border: `1.5px solid ${sel ? 'var(--navy)' : 'var(--border)'}`, background: sel ? '#f0f3fc' : 'white', color: sel ? 'var(--navy)' : 'var(--text-secondary)' }}
+                    >
+                      {cat.icon || cat.emoji || ''} {cat.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
-          {/* Subcategory — MULTI-SELECT checkboxes */}
+          {/* Subcategories for all selected categories */}
           {(isProduct ? pSubcats : sSubcats).length > 0 && (
             <CheckboxGrid
               label={isProduct ? 'Subcategories (select all that apply)' : 'Work Types (select all you can do)'}
@@ -499,7 +537,7 @@ export default function SellPage() {
         {/* ── Service sections ── */}
         {!isProduct && (
           <>
-            <Section title="Skills & Experience" icon="💼">
+            <Section title="Experience" icon="💼">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div className="form-group">
                   <label className="form-label">Experience (Years)</label>
@@ -514,15 +552,6 @@ export default function SellPage() {
                 <label className="form-label">Projects Completed</label>
                 <input className="form-input" type="number" placeholder="e.g., 50" value={sForm.projectsDone} onChange={e => sSet('projectsDone', e.target.value)} />
               </div>
-
-              {/* Skills — multi-select checkboxes + custom */}
-              <CheckboxGrid
-                label="Skills (select all that apply)"
-                options={suggestedSkills.length > 0 ? suggestedSkills : ['Brickwork', 'Plastering', 'Concrete', 'Waterproofing', 'Flooring', 'Tiling', 'Painting', 'Electrical', 'Plumbing', 'Woodwork']}
-                selected={sForm.skills}
-                onChange={v => sSet('skills', v)}
-                allowOther
-              />
             </Section>
 
             <Section title="Pricing" icon="💰">
@@ -561,22 +590,21 @@ export default function SellPage() {
 
         {/* Location — GPS + Search + Map pin */}
         <Section title="Location" icon="📍">
-          {/* 3 option buttons */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-            <button
-              type="button"
-              onClick={detectGPS}
-              disabled={detecting}
-              style={{ flex: 1, padding: '10px 8px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'white', color: 'var(--navy)', fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+            <button type="button" onClick={detectGPS} disabled={detecting}
+              style={{ flex: 1, minWidth: 90, padding: '10px 8px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'white', color: 'var(--navy)', fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}
             >
-              <Navigation size={13} /> {detecting ? 'Detecting...' : 'GPS Auto-Detect'}
+              <Navigation size={13} /> {detecting ? 'Detecting...' : 'GPS'}
             </button>
-            <button
-              type="button"
-              onClick={() => setShowLocPicker(true)}
-              style={{ flex: 1, padding: '10px 8px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'white', color: '#7c3aed', fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}
+            <button type="button" onClick={() => setShowLocPicker(true)}
+              style={{ flex: 1, minWidth: 90, padding: '10px 8px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'white', color: '#7c3aed', fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}
             >
-              <Search size={13} /> Search & Pin Map
+              <Search size={13} /> Search
+            </button>
+            <button type="button" onClick={() => setShowMapPicker(true)}
+              style={{ flex: 1, minWidth: 90, padding: '10px 8px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'white', color: '#10b981', fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}
+            >
+              <MapPin size={13} /> Pin Map
             </button>
           </div>
 
@@ -674,6 +702,15 @@ export default function SellPage() {
         onClose={() => setShowLocPicker(false)}
         onSelect={onLocSelect}
         currentCity={form.city}
+      />
+
+      {/* Map Pin Picker */}
+      <MapPinPicker
+        isOpen={showMapPicker}
+        onClose={() => setShowMapPicker(false)}
+        onConfirm={onMapConfirm}
+        initialLat={form.lat}
+        initialLng={form.lng}
       />
     </div>
   );
