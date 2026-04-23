@@ -5,6 +5,7 @@ import {
   Settings, LogOut, Star, MapPin, Phone, MessageSquare, Edit3, LifeBuoy, X, Lock,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
@@ -24,6 +25,7 @@ const MenuItem = ({ icon, label, sub, onClick, color = 'var(--navy)' }) => (
 export default function ProfilePage() {
   const navigate  = useNavigate();
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const [adsCount,      setAdsCount]      = useState(0);
   const [showSupport,   setShowSupport]   = useState(false);
   const [supportSubject, setSupportSubject] = useState('');
@@ -77,7 +79,7 @@ export default function ProfilePage() {
     }
   };
 
-  const contactModeLabel = user?.contactMode === 'direct' ? '📞 Direct Call Allowed' : '💬 Chat Only';
+  const contactModeLabel = user?.contactMode === 'direct' ? t('directCallAllowed') : t('chatOnly');
 
   return (
     <div className="page page-enter" style={{ paddingBottom: 90 }}>
@@ -125,9 +127,9 @@ export default function ProfilePage() {
         {/* Stats row */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginTop: 20 }}>
           {[
-            { label: 'Ads Posted', value: adsCount },
-            { label: 'Rating', value: user?.ratingAvg > 0 ? `⭐ ${user.ratingAvg.toFixed(1)}` : '—' },
-            { label: 'Reviews', value: user?.ratingCount || 0 },
+            { label: t('adsPosted'), value: adsCount },
+            { label: t('rating'), value: user?.ratingAvg > 0 ? `⭐ ${user.ratingAvg.toFixed(1)}` : '—' },
+            { label: t('reviews'), value: user?.ratingCount || 0 },
           ].map(s => (
             <div key={s.label} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px', textAlign: 'center' }}>
               <p style={{ fontSize: 18, fontWeight: 900, color: 'white' }}>{s.value}</p>
@@ -143,7 +145,7 @@ export default function ProfilePage() {
           </span>
           {user?.whatsappAvailable && (
             <span style={{ fontSize: 11, fontWeight: 600, background: 'rgba(37,211,102,0.2)', color: '#25d366', padding: '5px 12px', borderRadius: 20, display: 'inline-block', marginLeft: 6 }}>
-              💚 WhatsApp
+              {t('whatsapp')}
             </span>
           )}
         </div>
@@ -155,21 +157,21 @@ export default function ProfilePage() {
           onClick={() => navigate(`/seller/${user?._id || user?.id}`)}
           style={{ width: '100%', padding: '12px', borderRadius: 12, background: '#f0f3fc', border: '1.5px solid #d1d9ef', color: 'var(--navy)', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}
         >
-          👤 View My Seller Profile
+          {t('viewSellerProfile')}
         </button>
       </div>
 
       {/* ── Menu ── */}
       <div style={{ background: 'white', marginTop: 16, marginBottom: 12, boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
-        <MenuItem icon={<ClipboardList size={18} />} label="My Ads" sub={`${adsCount} posted`} onClick={() => navigate('/my-ads')} />
-        <MenuItem icon={<Heart size={18} />} label="Saved Favorites" onClick={() => navigate('/favorites')} color="#ef4444" />
-        <MenuItem icon={<MessageCircle size={18} />} label="My Chats" onClick={() => navigate('/chats')} />
+        <MenuItem icon={<ClipboardList size={18} />} label={t('myAds')} sub={`${adsCount} posted`} onClick={() => navigate('/my-ads')} />
+        <MenuItem icon={<Heart size={18} />} label={t('savedFavorites')} onClick={() => navigate('/favorites')} color="#ef4444" />
+        <MenuItem icon={<MessageCircle size={18} />} label={t('myChats')} onClick={() => navigate('/chats')} />
       </div>
 
       <div style={{ background: 'white', marginBottom: 12, boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
-        <MenuItem icon={<Settings size={18} />} label="Settings" sub="Edit profile, contact, location" onClick={() => navigate('/settings')} color="#6b7280" />
-        <MenuItem icon={<Lock size={18} />} label="Change PIN" sub="Update your 4-digit login PIN" onClick={() => setShowChangePin(true)} color="#8b5cf6" />
-        <MenuItem icon={<LifeBuoy size={18} />} label="Support" sub="Report an issue or get help" onClick={() => setShowSupport(true)} color="#f59e0b" />
+        <MenuItem icon={<Settings size={18} />} label={t('settings')} sub={t('editProfilePref')} onClick={() => navigate('/settings')} color="#6b7280" />
+        <MenuItem icon={<Lock size={18} />} label={t('changePin')} sub={t('updatePin')} onClick={() => setShowChangePin(true)} color="#8b5cf6" />
+        <MenuItem icon={<LifeBuoy size={18} />} label={t('support')} sub={t('reportIssue')} onClick={() => setShowSupport(true)} color="#f59e0b" />
       </div>
 
       <div style={{ background: 'white', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
@@ -177,7 +179,7 @@ export default function ProfilePage() {
           <div className="profile-menu-icon" style={{ background: '#fee2e2' }}>
             <LogOut size={18} color="var(--danger)" />
           </div>
-          <span className="profile-menu-label" style={{ color: 'var(--danger)' }}>Log Out</span>
+          <span className="profile-menu-label" style={{ color: 'var(--danger)' }}>{t('logOut')}</span>
           <ChevronRight size={16} color="var(--danger)" />
         </div>
       </div>

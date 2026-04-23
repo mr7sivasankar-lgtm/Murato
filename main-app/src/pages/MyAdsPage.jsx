@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, Edit3, Trash2, Plus, Package, Wrench, Star, MapPin } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { PRICE_TYPE_LABELS } from '../data/categories';
 import toast from 'react-hot-toast';
 
@@ -15,6 +16,7 @@ const STATUS_STYLES = {
 export default function MyAdsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [ads,      setAds]      = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [filter,   setFilter]   = useState('all'); // 'all' | 'product' | 'service'
@@ -60,14 +62,14 @@ export default function MyAdsPage() {
       <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>My Ads</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)' }}>{t('myAds')}</h1>
             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{ads.length} listings posted</p>
           </div>
           <button
             onClick={() => navigate('/sell')}
             style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--navy)', color: 'white', border: 'none', borderRadius: 12, padding: '10px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
           >
-            <Plus size={15} /> Post Ad
+            <Plus size={15} /> {t('postAd')}
           </button>
         </div>
 
@@ -100,9 +102,9 @@ export default function MyAdsPage() {
           <div className="empty-state">
             <div className="empty-icon">{filter === 'service' ? '🔧' : '📦'}</div>
             <p className="empty-title">No {filter === 'all' ? '' : filter} ads yet</p>
-            <p className="empty-subtitle">Post your first ad and start selling!</p>
+            <p className="empty-subtitle">{t('beFirst')}</p>
             <button className="btn btn-primary" style={{ width: 'auto', padding: '12px 28px' }} onClick={() => navigate('/sell')}>
-              Post First Ad
+              {t('postAd')}
             </button>
           </div>
         ) : (

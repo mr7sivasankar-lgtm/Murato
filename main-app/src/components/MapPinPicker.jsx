@@ -62,6 +62,20 @@ export default function MapPinPicker({ isOpen, onClose, onConfirm, initialLat, i
 
       updateFromLatLng(lat, lng);
 
+      if (navigator.geolocation && !initialLat) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const newLat = position.coords.latitude;
+            const newLng = position.coords.longitude;
+            map.setCenter({ lat: newLat, lng: newLng });
+            marker.setPosition({ lat: newLat, lng: newLng });
+            updateFromLatLng(newLat, newLng);
+          },
+          () => {},
+          { enableHighAccuracy: true, timeout: 5000 }
+        );
+      }
+
       marker.addListener('dragend', () => {
         const p = marker.getPosition();
         updateFromLatLng(p.lat(), p.lng());

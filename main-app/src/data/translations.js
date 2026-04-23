@@ -36,6 +36,13 @@ const T = {
     experience: 'Experience', pricing: 'Pricing', availability: 'Availability',
     description: 'Description', contact: 'Contact & Seller Info',
     posting: 'Posting...', postAdBtn: '🚀 Post Ad', updateAd: '✅ Update Ad',
+    adsPosted: 'Ads Posted', rating: 'Rating', reviews: 'Reviews',
+    directCallAllowed: '📞 Direct Call Allowed', whatsapp: '💚 WhatsApp',
+    viewSellerProfile: '👤 View My Seller Profile', savedFavorites: 'Saved Favorites',
+    myChats: 'My Chats', changePin: 'Change PIN', updatePin: 'Update your 4-digit login PIN',
+    support: 'Support', reportIssue: 'Report an issue or get help',
+    editProfilePref: 'Edit profile, contact, location',
+    messages: 'Messages', myListings: 'My Listings',
   },
 
   te: {
@@ -69,6 +76,13 @@ const T = {
     experience: 'అనుభవం', pricing: 'ధర నిర్ణయం', availability: 'అందుబాటు',
     description: 'వివరణ', contact: 'సంప్రదింపు & విక్రేత సమాచారం',
     posting: 'పోస్ట్ అవుతోంది...', postAdBtn: '🚀 ప్రకటన పోస్ట్ చేయండి', updateAd: '✅ ప్రకటన నవీకరించండి',
+    adsPosted: 'ప్రకటనలు', rating: 'రేటింగ్', reviews: 'సమీక్షలు',
+    directCallAllowed: '📞 డైరెక్ట్ కాల్ అనుమతించబడింది', whatsapp: '💚 WhatsApp',
+    viewSellerProfile: '👤 నా విక్రేత ప్రొఫైల్ చూడండి', savedFavorites: 'సేవ్ చేయబడిన ఇష్టమైనవి',
+    myChats: 'నా చాట్లు', changePin: 'పిన్ మార్చండి', updatePin: 'మీ 4-అంకెల లాగిన్ పిన్‌ను నవీకరించండి',
+    support: 'మద్దతు', reportIssue: 'సమస్యను నివేదించండి లేదా సహాయం పొందండి',
+    editProfilePref: 'ప్రొఫైల్, సంప్రదింపు, స్థానం సవరించండి',
+    messages: 'సందేశాలు', myListings: 'నా జాబితాలు',
   },
 
   ta: {
@@ -102,6 +116,13 @@ const T = {
     experience: 'அனுபவம்', pricing: 'விலை நிர்ணயம்', availability: 'கிடைக்கும் தன்மை',
     description: 'விளக்கம்', contact: 'தொடர்பு & விற்பனையாளர் தகவல்',
     posting: 'இடுகிறோம்...', postAdBtn: '🚀 விளம்பரம் இடுக', updateAd: '✅ விளம்பரம் புதுப்பிக்கவும்',
+    adsPosted: 'விளம்பரங்கள்', rating: 'மதிப்பீடு', reviews: 'மதிப்புரைகள்',
+    directCallAllowed: '📞 நேரடி அழைப்பு அனுமதிக்கப்படுகிறது', whatsapp: '💚 WhatsApp',
+    viewSellerProfile: '👤 என் விற்பனையாளர் சுயவிவரத்தைக் காண்க', savedFavorites: 'சேமிக்கப்பட்ட பிடித்தவைகள்',
+    myChats: 'என் அரட்டைகள்', changePin: 'பின்(PIN) மாற்றவும்', updatePin: 'உங்கள் 4-இலக்க உள்நுழைவு பின்னைப் புதுப்பிக்கவும்',
+    support: 'ஆதரவு', reportIssue: 'ஒரு சிக்கலைப் புகாரளிக்கவும் அல்லது உதவி பெறவும்',
+    editProfilePref: 'சுயவிவரம், தொடர்பு, இருப்பிடத்தைத் திருத்தவும்',
+    messages: 'செய்திகள்', myListings: 'என் பட்டியல்கள்',
   },
 };
 
