@@ -108,7 +108,8 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => { fetchAds(); }, [activeCategory, displayCity]);
-  useEffect(() => { fetchFeatured(); fetchBanners(); }, []);
+  useEffect(() => { fetchFeatured(); }, []);
+  useEffect(() => { fetchBanners(); }, [displayCity]); // re-fetch when GPS city resolves
 
   const fetchBanners = async () => {
     try {

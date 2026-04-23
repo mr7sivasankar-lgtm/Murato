@@ -2,27 +2,31 @@ const express = require('express');
 const router  = express.Router();
 const Banner  = require('../models/Banner');
 
-// @GET /api/banners?city=Hyderabad
-// Returns active banners for all users OR for a specific city
+// @GET /api/banners?city=Tirupati
 router.get('/', async (req, res) => {
   try {
     const { city } = req.query;
+    let filter = { isActive: { $ne: false } };
 
-    // Build filter: always include banners that target all (empty targetCity)
-    // If city provided, also include banners targeting that specific city
-    let filter = { isActive: true };
-
-    if (city) {
+    if (city && city.trim()) {
+      const c = city.trim();
+      // Match banners that target everyone (empty array) OR
+      // any element of targetCities partially matches the user's city (both ways)
       filter.$or = [
-        { targetCity: '' },         // show to everyone
-        { targetCity: null },       // show to everyone
-        { targetCity: { $regex: new RegExp(`^${city}$`, 'i') } }, // city match
+        { targetCities: { $size: 0 } },
+        { targetCities: { $exists: false } },
+        { targetCities: { $elemMatch: { $regex: c, $options: 'i' } } },
+        // Also match if stored city is a substring of the user's GPS city
+        // e.g. stored "Tirupati" matches user GPS city "Tirupati (Urban)"
+        ...c.split(/[\s,()]+/).filter(w => w.length >= 4).map(word => ({
+          targetCities: { $elemMatch: { $regex: word, $options: 'i' } }
+        }))
       ];
     } else {
-      // No city known — only show universal banners
+      // Unknown city — only universal banners
       filter.$or = [
-        { targetCity: '' },
-        { targetCity: null },
+        { targetCities: { $size: 0 } },
+        { targetCities: { $exists: false } },
       ];
     }
 

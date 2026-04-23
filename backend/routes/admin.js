@@ -194,6 +194,28 @@ router.delete('/shops/:id', adminProtect, async (req, res) => {
 
 // ===================== BANNERS =====================
 
+// helper: resolve user from phone or ID
+async function resolveUser(identifier) {
+  if (!identifier || !identifier.trim()) return null;
+  let user;
+  if (mongoose.isValidObjectId(identifier.trim())) {
+    user = await User.findById(identifier.trim());
+  }
+  if (!user) {
+    const cleaned   = identifier.replace(/\D/g, '');
+    const normalised = `+91${cleaned.slice(-10)}`;
+    user = await User.findOne({ phone: normalised });
+  }
+  return user;
+}
+
+// helper: parse cities from body (JSON array string or comma-separated)
+function parseCities(raw) {
+  if (!raw) return [];
+  try { return JSON.parse(raw).filter(Boolean); } catch {}
+  return raw.split(',').map(c => c.trim()).filter(Boolean);
+}
+
 // @GET /api/admin/banners
 router.get('/banners', adminProtect, async (req, res) => {
   try {
@@ -211,30 +233,18 @@ router.post('/banners', adminProtect, upload.single('image'), async (req, res) =
   try {
     if (!req.file) return res.status(400).json({ message: 'Image is required' });
 
-    const { targetUser, targetCity } = req.body;
+    const { targetUser, targetCities: rawCities } = req.body;
 
-    // targetUser is OPTIONAL — a banner can be a general promotion
-    let targetUserId = null;
-    if (targetUser && targetUser.trim()) {
-      let user;
-      if (mongoose.isValidObjectId(targetUser.trim())) {
-        user = await User.findById(targetUser.trim());
-      }
-      if (!user) {
-        const cleaned   = targetUser.replace(/\D/g, '');
-        const normalised = `+91${cleaned.slice(-10)}`;
-        user = await User.findOne({ phone: normalised });
-      }
-      if (!user) return res.status(404).json({ message: 'Target user not found. Check the phone number.' });
-      targetUserId = user._id;
-    }
+    const user = await resolveUser(targetUser);
+    if (targetUser && targetUser.trim() && !user)
+      return res.status(404).json({ message: 'Target user not found. Check the phone number.' });
 
     const result = await uploadToCloudinary(req.file.buffer, 'murato/banners');
 
     const banner = await Banner.create({
       imageUrl:     result.secure_url,
-      targetUserId: targetUserId,
-      targetCity:   (targetCity || '').trim(),
+      targetUserId: user ? user._id : null,
+      targetCities: parseCities(rawCities),
       isActive:     true,
     });
 
@@ -245,15 +255,48 @@ router.post('/banners', adminProtect, upload.single('image'), async (req, res) =
   }
 });
 
+// @PUT /api/admin/banners/:id  — Edit banner (image optional)
+router.put('/banners/:id', adminProtect, upload.single('image'), async (req, res) => {
+  try {
+    const banner = await Banner.findById(req.params.id);
+    if (!banner) return res.status(404).json({ message: 'Banner not found' });
+
+    const { targetUser, targetCities: rawCities } = req.body;
+
+    // Update image if a new one was uploaded
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer, 'murato/banners');
+      banner.imageUrl = result.secure_url;
+    }
+
+    // Update target user
+    if (targetUser !== undefined) {
+      const user = await resolveUser(targetUser);
+      if (targetUser && targetUser.trim() && !user)
+        return res.status(404).json({ message: 'Target user not found.' });
+      banner.targetUserId = user ? user._id : null;
+    }
+
+    // Update target cities
+    if (rawCities !== undefined) {
+      banner.targetCities = parseCities(rawCities);
+    }
+
+    await banner.save();
+    const populated = await banner.populate('targetUserId', 'name phone businessName');
+    res.json(populated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @PUT /api/admin/banners/:id/toggle
 router.put('/banners/:id/toggle', adminProtect, async (req, res) => {
   try {
     const banner = await Banner.findById(req.params.id);
     if (!banner) return res.status(404).json({ message: 'Banner not found' });
-    
     banner.isActive = !banner.isActive;
     await banner.save();
-    
     const populated = await banner.populate('targetUserId', 'name phone businessName');
     res.json(populated);
   } catch (error) {
@@ -272,4 +315,3 @@ router.delete('/banners/:id', adminProtect, async (req, res) => {
 });
 
 module.exports = router;
-
