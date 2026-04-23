@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, MapPin, Check } from 'lucide-react';
+import { X, MapPin, Check, Navigation } from 'lucide-react';
 
 const KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || '';
 
@@ -32,6 +32,24 @@ export default function MapPinPicker({ isOpen, onClose, onConfirm, initialLat, i
   const markerRef   = useRef(null);
   const [address, setAddress] = useState('');
   const [geoData, setGeoData] = useState(null);
+  const [locating, setLocating] = useState(false);
+
+  const locateMe = () => {
+    if (!navigator.geolocation || !mapInstance.current || !markerRef.current) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const newLat = position.coords.latitude;
+        const newLng = position.coords.longitude;
+        mapInstance.current.panTo({ lat: newLat, lng: newLng });
+        markerRef.current.setPosition({ lat: newLat, lng: newLng });
+        updateFromLatLng(newLat, newLng);
+        setLocating(false);
+      },
+      () => { setLocating(false); },
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
+  };
 
   const updateFromLatLng = async (lat, lng) => {
     try {
@@ -133,7 +151,23 @@ export default function MapPinPicker({ isOpen, onClose, onConfirm, initialLat, i
         </div>
       </div>
 
-      <div ref={mapRef} style={{ flex: 1, minHeight: 0 }} />
+      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+        <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+        
+        {/* Locate Me Button */}
+        <button
+          onClick={locateMe}
+          disabled={locating}
+          style={{
+            position: 'absolute', bottom: 20, right: 20, width: 44, height: 44,
+            borderRadius: '50%', background: 'white', border: 'none',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', zIndex: 10, color: 'var(--navy)'
+          }}
+        >
+          <Navigation size={20} fill={locating ? 'var(--navy)' : 'transparent'} style={{ opacity: locating ? 0.5 : 1 }} />
+        </button>
+      </div>
 
       <div style={{ background: 'white', padding: '16px 20px', boxShadow: '0 -4px 20px rgba(0,0,0,0.15)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 14, background: '#f0f3fc', borderRadius: 12, padding: '12px 14px' }}>

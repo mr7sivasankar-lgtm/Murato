@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronRight, Heart, ClipboardList, MessageCircle,
-  Settings, LogOut, Star, MapPin, Phone, MessageSquare, Edit3, LifeBuoy, X, Lock,
+  Settings, LogOut, Star, MapPin, Phone, MessageSquare, Edit3, LifeBuoy, X, Lock, Globe,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { LANGS } from '../data/translations';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
@@ -25,7 +26,7 @@ const MenuItem = ({ icon, label, sub, onClick, color = 'var(--navy)' }) => (
 export default function ProfilePage() {
   const navigate  = useNavigate();
   const { user, logout } = useAuth();
-  const { t } = useLanguage();
+  const { lang, setLang, t } = useLanguage();
   const [adsCount,      setAdsCount]      = useState(0);
   const [showSupport,   setShowSupport]   = useState(false);
   const [supportSubject, setSupportSubject] = useState('');
@@ -166,6 +167,31 @@ export default function ProfilePage() {
         <MenuItem icon={<ClipboardList size={18} />} label={t('myAds')} sub={`${adsCount} posted`} onClick={() => navigate('/my-ads')} />
         <MenuItem icon={<Heart size={18} />} label={t('savedFavorites')} onClick={() => navigate('/favorites')} color="#ef4444" />
         <MenuItem icon={<MessageCircle size={18} />} label={t('myChats')} onClick={() => navigate('/chats')} />
+      </div>
+
+      {/* ── Language ── */}
+      <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginTop: 24, marginBottom: 10, padding: '0 20px' }}>{t('language') || 'Language'}</p>
+      <div style={{ background: 'white', overflow: 'hidden', marginBottom: 24, boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
+        {LANGS.map((l, i) => (
+          <button key={l.code} onClick={() => setLang(l.code)}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', background: 'none', border: 'none', cursor: 'pointer', borderBottom: i < LANGS.length - 1 ? '1px solid var(--border)' : 'none', transition: 'background 0.15s' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f0f3fc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Globe size={18} color="var(--navy)" />
+            </div>
+            <div style={{ flex: 1, textAlign: 'left' }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{l.native}</p>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{l.label}</p>
+            </div>
+            {lang === l.code && (
+              <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: 'white', fontSize: 12 }}>✓</span>
+              </div>
+            )}
+          </button>
+        ))}
       </div>
 
       <div style={{ background: 'white', marginBottom: 12, boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
