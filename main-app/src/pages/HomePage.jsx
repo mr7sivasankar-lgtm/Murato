@@ -56,8 +56,13 @@ export default function HomePage() {
   useEffect(() => { fetchFeatured(); fetchBanners(); }, []);
 
   const fetchBanners = async () => {
-    try { const { data } = await api.get('/banners'); setBanners(data || []); }
-    catch { setBanners([]); }
+    try {
+      // Pass city so backend returns city-specific + universal banners
+      const params = {};
+      if (displayCity && displayCity !== 'Set Location') params.city = displayCity;
+      const { data } = await api.get('/banners', { params });
+      setBanners(data || []);
+    } catch { setBanners([]); }
   };
 
   const fetchAds = async () => {

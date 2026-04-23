@@ -35,11 +35,11 @@ function AppRoutes() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/search" element={<SearchPage />} />
-        <Route path="/ads/:id" element={<AdDetailPage />} />
-        <Route path="/seller/:id" element={<SellerProfilePage />} />
+        <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
+        <Route path="/ads/:id" element={<ProtectedRoute><AdDetailPage /></ProtectedRoute>} />
+        <Route path="/seller/:id" element={<ProtectedRoute><SellerProfilePage /></ProtectedRoute>} />
         <Route path="/sell" element={<ProtectedRoute><SellPage /></ProtectedRoute>} />
         <Route path="/chats" element={<ProtectedRoute><ChatsPage /></ProtectedRoute>} />
         <Route path="/chat/:chatId" element={<ProtectedRoute><ChatRoomPage /></ProtectedRoute>} />

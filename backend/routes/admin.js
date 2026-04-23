@@ -210,30 +210,32 @@ router.get('/banners', adminProtect, async (req, res) => {
 router.post('/banners', adminProtect, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Image is required' });
-    
-    // Find target user
-    const userIdentifier = req.body.targetUser; // can be phone or ID
-    if (!userIdentifier) return res.status(400).json({ message: 'Target user is required' });
 
-    let user;
-    if (mongoose.isValidObjectId(userIdentifier)) {
-      user = await User.findById(userIdentifier);
-    }
-    if (!user) {
-      // try phone
-      const cleaned = userIdentifier.replace(/\D/g, '');
-      const normalised = `+91${cleaned.slice(-10)}`;
-      user = await User.findOne({ phone: normalised });
-    }
+    const { targetUser, targetCity } = req.body;
 
-    if (!user) return res.status(404).json({ message: 'Target user not found' });
+    // targetUser is OPTIONAL — a banner can be a general promotion
+    let targetUserId = null;
+    if (targetUser && targetUser.trim()) {
+      let user;
+      if (mongoose.isValidObjectId(targetUser.trim())) {
+        user = await User.findById(targetUser.trim());
+      }
+      if (!user) {
+        const cleaned   = targetUser.replace(/\D/g, '');
+        const normalised = `+91${cleaned.slice(-10)}`;
+        user = await User.findOne({ phone: normalised });
+      }
+      if (!user) return res.status(404).json({ message: 'Target user not found. Check the phone number.' });
+      targetUserId = user._id;
+    }
 
     const result = await uploadToCloudinary(req.file.buffer, 'murato/banners');
-    
+
     const banner = await Banner.create({
-      imageUrl: result.secure_url,
-      targetUserId: user._id,
-      isActive: true
+      imageUrl:     result.secure_url,
+      targetUserId: targetUserId,
+      targetCity:   (targetCity || '').trim(),
+      isActive:     true,
     });
 
     const populated = await banner.populate('targetUserId', 'name phone businessName');
