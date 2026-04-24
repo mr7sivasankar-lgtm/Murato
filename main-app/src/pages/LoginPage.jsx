@@ -5,45 +5,63 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 
-/* ── 4-digit PIN input ── */
-function PinInput({ value, onChange, onComplete }) {
-  const refs = [useRef(), useRef(), useRef(), useRef()];
-  const digits = value.split('');
+/* ── 4-digit PIN input ── Mobile-compatible via single hidden input ── */
+function PinInput({ value, onChange, onComplete, error }) {
+  const hiddenRef = useRef();
+  const digits = (value + '    ').slice(0, 4).split('');
 
-  const handleKey = (i, e) => {
-    if (e.key === 'Backspace') {
-      const next = digits.map((d, idx) => idx === i ? '' : d).join('');
-      onChange(next);
-      if (i > 0) refs[i - 1].current?.focus();
-      return;
-    }
-    if (!/^\d$/.test(e.key)) return;
-    const next = [...digits];
-    next[i] = e.key;
-    const joined = next.join('').slice(0, 4);
-    onChange(joined);
-    if (i < 3) refs[i + 1].current?.focus();
-    if (joined.length === 4) setTimeout(() => onComplete?.(joined), 100);
+  const handleChange = (e) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
+    onChange(raw);
+    if (raw.length === 4) setTimeout(() => onComplete?.(raw), 80);
   };
 
   return (
-    <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-      {[0, 1, 2, 3].map(i => (
-        <input
-          key={i} ref={refs[i]} type="password" inputMode="numeric"
-          maxLength={1} value={digits[i] || ''}
-          autoFocus={i === 0}
-          onChange={() => {}}
-          onKeyDown={e => handleKey(i, e)}
-          style={{
-            width: 64, height: 68, textAlign: 'center', fontSize: 28, fontWeight: 800,
-            border: `2.5px solid ${digits[i] ? '#1a2b5f' : '#e5e7eb'}`,
-            borderRadius: 16, outline: 'none',
-            background: digits[i] ? '#f0f3fc' : 'white',
-            color: '#1a2b5f', transition: 'all 0.2s',
-          }}
-        />
-      ))}
+    <div style={{ position: 'relative' }}>
+      {/* Hidden real input that captures keyboard */}
+      <input
+        ref={hiddenRef}
+        type="tel"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        maxLength={4}
+        value={value}
+        onChange={handleChange}
+        autoFocus
+        style={{
+          position: 'absolute', opacity: 0, width: '100%', height: '100%',
+          top: 0, left: 0, zIndex: 2, cursor: 'pointer', fontSize: 1,
+        }}
+      />
+      {/* Visual digit boxes */}
+      <div
+        style={{ display: 'flex', gap: 12, justifyContent: 'center', position: 'relative', zIndex: 1 }}
+        onClick={() => hiddenRef.current?.focus()}
+      >
+        {[0, 1, 2, 3].map(i => (
+          <div
+            key={i}
+            style={{
+              width: 64, height: 68, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 28, fontWeight: 800,
+              border: `2.5px solid ${error ? '#ef4444' : digits[i].trim() ? '#1a2b5f' : '#e5e7eb'}`,
+              borderRadius: 16,
+              background: error ? '#fef2f2' : digits[i].trim() ? '#f0f3fc' : 'white',
+              color: '#1a2b5f',
+              transition: 'all 0.2s',
+              animation: error ? 'pin-shake 0.4s ease' : 'none',
+            }}
+          >
+            {digits[i].trim() ? '•' : ''}
+          </div>
+        ))}
+      </div>
+      {/* Inline error message */}
+      {error && (
+        <p style={{ textAlign: 'center', color: '#ef4444', fontWeight: 700, fontSize: 14, marginTop: 12 }}>
+          ❌ {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -66,6 +84,7 @@ export default function LoginPage() {
   const [area, setArea]       = useState('');
   const [loading, setLoading] = useState(false);
   const [showPin, setShowPin] = useState(false);
+  const [pinError, setPinError] = useState('');
 
   /* ── Step: phone check (new user) ── */
   const handlePhoneNext = async () => {
@@ -106,6 +125,7 @@ export default function LoginPage() {
   /* ── Step: PIN login (returning user) ── */
   const handlePinLogin = async (finalPin) => {
     setLoading(true);
+    setPinError('');
     try {
       const { data } = await api.post('/auth/login-pin', { phone, pin: finalPin });
       localStorage.setItem('murato_token', data.token);
@@ -113,7 +133,8 @@ export default function LoginPage() {
       toast.success(`Welcome back, ${data.user.name}! 👋`);
       navigate('/');
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Incorrect PIN');
+      const msg = err?.response?.data?.message || 'Incorrect PIN';
+      setPinError(msg);
       setPin('');
     } finally { setLoading(false); }
   };
@@ -215,14 +236,14 @@ export default function LoginPage() {
   if (step === 'pin') return (
     <Wrapper icon={<Lock size={36} color="white" strokeWidth={1.5} />} title="Enter Your PIN" subtitle="Welcome back! Enter your 4-digit PIN">
       <p style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 20, textAlign: 'center' }}>Your 4-digit PIN</p>
-      <PinInput value={pin} onChange={setPin} onComplete={handlePinLogin} />
+      <PinInput value={pin} onChange={(v) => { setPin(v); setPinError(''); }} onComplete={handlePinLogin} error={pinError} />
       {loading && <p style={{ textAlign: 'center', color: '#1a2b5f', fontWeight: 600, marginTop: 16 }}>Verifying...</p>}
       <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
-        <button onClick={() => { setStep('forgot'); setRecoveredPin(''); setForgotPhone(''); }}
+        <button onClick={() => { setStep('forgot'); setRecoveredPin(''); setForgotPhone(''); setPinError(''); }}
           style={{ fontSize: 14, color: '#1a2b5f', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>
           Forgot PIN?
         </button>
-        <button onClick={() => { localStorage.removeItem('murato_phone'); setPhone(''); setStep('phone'); }}
+        <button onClick={() => { localStorage.removeItem('murato_phone'); setPhone(''); setStep('phone'); setPinError(''); }}
           style={{ fontSize: 14, color: '#2563eb', fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', marginTop: 8 }}>
           Use a different number
         </button>

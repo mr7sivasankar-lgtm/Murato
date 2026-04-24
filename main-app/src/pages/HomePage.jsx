@@ -9,7 +9,6 @@ import api from '../api/axios';
 import AdCard from '../components/AdCard';
 
 /* ── Admin Banner Carousel ── */
-const BANNER_HEIGHT = 160;
 
 function BannerCarousel({ banners, navigate }) {
   const [active, setActive] = useState(0);
@@ -67,7 +66,7 @@ function BannerCarousel({ banners, navigate }) {
               }
             }}
             style={{
-              minWidth: '100%', height: BANNER_HEIGHT, flexShrink: 0,
+              minWidth: '100%', aspectRatio: '16/5', flexShrink: 0,
               scrollSnapAlign: 'start',
               cursor: (banner.externalUrl || banner.targetUserId) ? 'pointer' : 'default',
               borderRadius: 20, overflow: 'hidden',
