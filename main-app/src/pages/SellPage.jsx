@@ -5,6 +5,7 @@ import {
   Phone, MessageCircle, Package, Wrench, Search, Check,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { PRODUCT_CATEGORIES, SERVICE_CATEGORIES, UNIT_LABELS, PRICE_TYPE_LABELS } from '../data/categories';
 import LocationPicker from '../components/LocationPicker';
 import MapPinPicker from '../components/MapPinPicker';
@@ -114,6 +115,7 @@ export default function SellPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const fileRef  = useRef();
 
   const editAd = location.state?.ad || null;
@@ -300,13 +302,13 @@ export default function SellPage() {
           <button onClick={() => navigate(-1)} style={{ color: 'white', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', display: 'flex' }}>
             <ArrowLeft size={20} />
           </button>
-          <h1 style={{ fontSize: 20, fontWeight: 900, color: 'white' }}>Post New Ad</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 900, color: 'white' }}>{t('postNewAd')}</h1>
         </div>
         <div style={{ padding: '0 24px' }}>
-          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 15, marginBottom: 32, textAlign: 'center' }}>What are you posting?</p>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 15, marginBottom: 32, textAlign: 'center' }}>{t('whatPosting')}</p>
           {[
-            { type: 'product', icon: '📦', title: 'Product / Material', sub: 'Cement, bricks, sand, steel, tiles...' },
-            { type: 'service', icon: '🔧', title: 'Service / Labour', sub: 'Mason, electrician, contractor, plumber...' },
+            { type: 'product', icon: '📦', title: t('productTitle'), sub: t('productSub') },
+            { type: 'service', icon: '🔧', title: t('serviceTitle'), sub: t('serviceSub') },
           ].map(opt => (
             <button key={opt.type} onClick={() => setAdType(opt.type)} style={{ width: '100%', background: 'white', borderRadius: 20, padding: '22px 20px', display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16, border: 'none', cursor: 'pointer', textAlign: 'left', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', transition: 'transform 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
@@ -338,10 +340,10 @@ export default function SellPage() {
         </button>
         <div>
           <h1 style={{ fontSize: 18, fontWeight: 900, color: 'white' }}>
-            {editAd ? 'Edit Ad' : isProduct ? '📦 Post Product' : '🔧 Post Service'}
+            {editAd ? t('editAd') : isProduct ? t('postProduct') : t('postService')}
           </h1>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>
-            {isProduct ? 'Fill product details below' : 'Fill service details below'}
+            {isProduct ? t('fillProduct') : t('fillService')}
           </p>
         </div>
       </div>
@@ -349,7 +351,7 @@ export default function SellPage() {
       <div style={{ padding: '16px' }}>
 
         {/* Photos */}
-        <Section title="Photos" icon="📷">
+        <Section title={t('photos')} icon="📷">
           <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleImages} />
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {images.map((img, i) => (
@@ -371,7 +373,7 @@ export default function SellPage() {
         </Section>
 
         {/* Basic Details */}
-        <Section title="Basic Details" icon="📝">
+        <Section title={t('basicDetails')} icon="📝">
           <div className="form-group">
             <label className="form-label">{isProduct ? 'Product Title *' : 'Service Title *'}</label>
             <input className="form-input" placeholder={isProduct ? 'e.g., UltraTech OPC Cement — 50kg bags' : 'e.g., Experienced Mason for House Construction'} value={form.title} onChange={e => fSet('title', e.target.value)} />
@@ -381,16 +383,16 @@ export default function SellPage() {
           {isProduct ? (
             <>
               <CatSelect
-                label="Category *"
+                label={`${t('categoryLabel')} *`}
                 value={pForm.category}
                 onChange={v => { pSet('category', v); pSet('subcategories', []); }}
                 options={PRODUCT_CATEGORIES}
-                placeholder="Select Category"
+                placeholder={t('selectCategory')}
               />
               {!pForm.category && (
                 <div className="form-group">
-                  <label className="form-label" style={{ color: 'var(--text-muted)' }}>Or type manually</label>
-                  <input className="form-input" placeholder="Type category name..." value={pForm.manualCategory || ''} onChange={e => { pSet('manualCategory', e.target.value); pSet('category', e.target.value); }} />
+                  <label className="form-label" style={{ color: 'var(--text-muted)' }}>{t('typeManually')}</label>
+                  <input className="form-input" placeholder={t('typeCategory')} value={pForm.manualCategory || ''} onChange={e => { pSet('manualCategory', e.target.value); pSet('category', e.target.value); }} />
                 </div>
               )}
             </>
@@ -422,7 +424,7 @@ export default function SellPage() {
           {/* Subcategories for all selected categories */}
           {(isProduct ? pSubcats : sSubcats).length > 0 && (
             <CheckboxGrid
-              label={isProduct ? 'Subcategories (select all that apply)' : 'Work Types (select all you can do)'}
+              label={isProduct ? t('subcategoriesLabel') : t('workTypesLabel')}
               options={isProduct ? pSubcats : sSubcats}
               selected={form.subcategories}
               onChange={v => fSet('subcategories', v)}
@@ -433,7 +435,7 @@ export default function SellPage() {
           {/* Item types — multi-select */}
           {(isProduct ? pTypes : sTypes).length > 0 && (
             <CheckboxGrid
-              label={isProduct ? 'Specific Types / Grades' : 'Specific Details / Machines'}
+              label={isProduct ? t('specificTypesLabel') : t('specificDetailsLabel')}
               options={isProduct ? pTypes : sTypes}
               selected={form.itemTypes}
               onChange={v => fSet('itemTypes', v)}
@@ -448,7 +450,7 @@ export default function SellPage() {
             <Section title="Product Details" icon="📦">
               {/* Brand — FREE TEXT input + optional suggestions */}
               <div className="form-group">
-                <label className="form-label">Brand</label>
+                <label className="form-label">{t('brandLabel')}</label>
                 <input
                   className="form-input"
                   placeholder="e.g., UltraTech, TATA, Bosch, or your brand"
@@ -473,12 +475,12 @@ export default function SellPage() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Material Type / Grade</label>
+                <label className="form-label">{t('materialTypeLabel')}</label>
                 <input className="form-input" placeholder="e.g., OPC 43 Grade, Fe-500, 6mm thick" value={pForm.materialType} onChange={e => pSet('materialType', e.target.value)} />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Condition</label>
+                <label className="form-label">{t('conditionLabel')}</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {['new', 'used'].map(c => (
                     <button key={c} type="button" onClick={() => pSet('condition', c)} style={{ flex: 1, padding: '10px', borderRadius: 8, border: `2px solid ${pForm.condition === c ? 'var(--navy)' : 'var(--border)'}`, background: pForm.condition === c ? '#f0f3fc' : 'white', fontWeight: 600, fontSize: 13, color: pForm.condition === c ? 'var(--navy)' : 'var(--text-secondary)', cursor: 'pointer', textTransform: 'capitalize' }}>
@@ -489,7 +491,7 @@ export default function SellPage() {
               </div>
             </Section>
 
-            <Section title="Quantity & Availability" icon="📊">
+            <Section title={t('availability')} icon="📊">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Quantity Available</label>
@@ -503,7 +505,7 @@ export default function SellPage() {
               </div>
             </Section>
 
-            <Section title="Pricing" icon="💰">
+            <Section title={t('pricing')} icon="💰">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Price *</label>
@@ -515,7 +517,7 @@ export default function SellPage() {
               <Toggle value={pForm.bulkDiscount} onChange={v => pSet('bulkDiscount', v)} label="Bulk Discount Available" />
             </Section>
 
-            <Section title="Delivery & Pickup" icon="🚚">
+            <Section title={t('deliveryOptions')} icon="🚚">
               <Toggle value={pForm.deliveryAvailable} onChange={v => pSet('deliveryAvailable', v)} label="Delivery Available" />
               {pForm.deliveryAvailable && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
@@ -537,7 +539,7 @@ export default function SellPage() {
         {/* ── Service sections ── */}
         {!isProduct && (
           <>
-            <Section title="Experience" icon="💼">
+            <Section title={t('experience')} icon="💼">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div className="form-group">
                   <label className="form-label">Experience (Years)</label>
@@ -554,7 +556,7 @@ export default function SellPage() {
               </div>
             </Section>
 
-            <Section title="Pricing" icon="💰">
+            <Section title={t('pricing')} icon="💰">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
                 <CatSelect label="Pricing Type" value={sForm.pricingType} onChange={v => sSet('pricingType', v)} options={['per_day','per_hour','per_sqft','per_project','fixed'].map(p => ({ name: p, label: PRICE_TYPE_LABELS[p] || p }))} placeholder="Type" />
                 <div className="form-group" style={{ marginBottom: 0 }}>
@@ -565,7 +567,7 @@ export default function SellPage() {
               <Toggle value={sForm.negotiable} onChange={v => sSet('negotiable', v)} label="Negotiable" />
             </Section>
 
-            <Section title="Availability" icon="📅">
+            <Section title={t('availability')} icon="📅">
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {[
                   { value: 'available', label: '✅ Available Now', color: '#10b981' },
@@ -589,7 +591,7 @@ export default function SellPage() {
         )}
 
         {/* Location — GPS + Search + Map pin */}
-        <Section title="Location" icon="📍">
+        <Section title={t('location')} icon="📍">
           <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
             <button type="button" onClick={detectGPS} disabled={detecting}
               style={{ flex: 1, minWidth: 90, padding: '10px 8px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'white', color: 'var(--navy)', fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}
@@ -631,7 +633,7 @@ export default function SellPage() {
           </div>
         </Section>
 
-        <Section title="Contact & Seller Info" icon="📞">
+        <Section title={t('contact')} icon="📞">
           <div className="form-group">
             <label className="form-label">Business / Shop Name</label>
             <input className="form-input" placeholder="Your business or your name" value={form.businessName} onChange={e => fSet('businessName', e.target.value)} />
@@ -679,7 +681,7 @@ export default function SellPage() {
         </Section>
 
         {/* Description */}
-        <Section title="Description" icon="📄">
+        <Section title={t('description')} icon="📄">
           <textarea
             className="form-input"
             rows={4}
@@ -692,7 +694,7 @@ export default function SellPage() {
 
         {/* Submit */}
         <button onClick={handleSubmit} disabled={submitting} className="btn btn-primary" style={{ borderRadius: 50, fontWeight: 800, fontSize: 16, opacity: submitting ? 0.7 : 1 }}>
-          {submitting ? 'Posting...' : editAd ? '✅ Update Ad' : '🚀 Post Ad'}
+          {submitting ? t('posting') : editAd ? t('updateAd') : t('postAdBtn')}
         </button>
       </div>
 
