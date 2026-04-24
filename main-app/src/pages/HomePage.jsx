@@ -45,8 +45,8 @@ function BannerCarousel({ banners, navigate }) {
   };
 
   return (
-    <div style={{ marginBottom: 16 }}>
-      {/* Full-width scroll track */}
+    <div style={{ marginBottom: 0, overflow: 'hidden' }}>
+      {/* Full-width scroll track — use 100vw per slide to fix mobile half-banner */}
       <div
         ref={trackRef}
         onScroll={onScroll}
@@ -54,6 +54,7 @@ function BannerCarousel({ banners, navigate }) {
           display: 'flex', overflowX: 'auto', scrollbarWidth: 'none',
           scrollSnapType: 'x mandatory',
           WebkitOverflowScrolling: 'touch',
+          msOverflowStyle: 'none',
         }}
       >
         {banners.map(banner => (
@@ -67,7 +68,8 @@ function BannerCarousel({ banners, navigate }) {
               }
             }}
             style={{
-              minWidth: '100%', height: 160, flexShrink: 0, scrollSnapAlign: 'start',
+              flex: '0 0 100vw', width: '100vw', height: 160,
+              scrollSnapAlign: 'start', scrollSnapStop: 'always',
               cursor: (banner.externalUrl || banner.targetUserId) ? 'pointer' : 'default',
               overflow: 'hidden', background: '#fff',
               userSelect: 'none',
@@ -89,7 +91,7 @@ function BannerCarousel({ banners, navigate }) {
 
       {/* Dot indicators */}
       {banners.length > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 8, marginBottom: 8 }}>
           {banners.map((_, i) => (
             <button
               key={i} onClick={() => goTo(i)}
@@ -242,8 +244,13 @@ export default function HomePage() {
       {/* ── Admin Banners Carousel ── */}
       {banners.length > 0 && <BannerCarousel banners={banners} navigate={navigate} />}
 
-      {/* Categories — full page width */}
-      <div style={{ marginBottom: 28 }}>
+      {/* Categories — full page width, with top & bottom divider */}
+      <div style={{
+        borderTop: '1px solid var(--border)',
+        borderBottom: '1px solid var(--border)',
+        paddingTop: 16, paddingBottom: 16,
+        marginBottom: 24, background: '#fff',
+      }}>
         <div style={{ padding: '0 20px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>
             {t('browseCategories')} <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginLeft: 4 }}>{PRODUCT_CATEGORIES.length}+</span>
