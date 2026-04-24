@@ -189,6 +189,66 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
           <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>Tapping the banner opens this seller's profile. If External URL is set above, that takes priority.</p>
         </div>
 
+        {/* ── Live Mobile Preview ── */}
+        {imagePreview && (
+          <div className="form-group" style={{ marginTop: 8 }}>
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              📱 Live Preview <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 12 }}>— how it looks on the user's home screen</span>
+            </label>
+
+            {/* Phone frame */}
+            <div style={{
+              margin: '0 auto',
+              width: 240,
+              background: '#0f1d45',
+              borderRadius: 32,
+              padding: '12px 8px 16px',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
+              border: '3px solid #1a2b5f',
+            }}>
+              {/* Notch */}
+              <div style={{ width: 60, height: 6, background: '#1a2b5f', borderRadius: 3, margin: '0 auto 10px' }} />
+
+              {/* Fake header */}
+              <div style={{ background: 'linear-gradient(135deg, rgba(224,231,255,0.95) 0%, rgba(250,232,255,0.9) 100%)', borderRadius: '12px 12px 0 0', padding: '8px 10px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: 9, color: '#1a2b5f', fontWeight: 700 }}>📍 Tirupati</div>
+                <div style={{ fontSize: 11, fontWeight: 900, color: '#1a2b5f' }}>Murato</div>
+                <div style={{ width: 24 }} />
+              </div>
+              {/* Fake search bar */}
+              <div style={{ background: 'linear-gradient(135deg, rgba(224,231,255,0.95) 0%, rgba(250,232,255,0.9) 100%)', padding: '4px 10px 8px' }}>
+                <div style={{ background: 'rgba(255,255,255,0.8)', borderRadius: 50, padding: '5px 10px', fontSize: 9, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  🔍 Search "cement near me"
+                </div>
+              </div>
+
+              {/* Banner preview */}
+              <div style={{ padding: '6px 8px 4px', background: '#f0f2f9' }}>
+                <div style={{ borderRadius: 10, overflow: 'hidden', height: 76, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+                  <img
+                    src={imagePreview}
+                    alt="Banner preview"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                </div>
+                {/* Dot indicator */}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: 5, marginBottom: 2 }}>
+                  <div style={{ width: 14, height: 4, borderRadius: 2, background: '#1a2b5f' }} />
+                  <div style={{ width: 5, height: 4, borderRadius: 2, background: '#d1d5db' }} />
+                </div>
+                {/* Fake categories label */}
+                <div style={{ fontSize: 9, fontWeight: 700, color: '#1a1a2e', padding: '4px 0 2px' }}>Browse Categories 12+</div>
+              </div>
+
+              {/* Home indicator */}
+              <div style={{ width: 50, height: 3, background: 'rgba(255,255,255,0.3)', borderRadius: 2, margin: '10px auto 0' }} />
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text-secondary)', textAlign: 'center', marginTop: 8 }}>
+              ⬆️ This is exactly how your banner appears in the app carousel
+            </p>
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
           <button className="btn btn-ghost" onClick={onClose} disabled={uploading}>Cancel</button>
           <button className="btn btn-primary" onClick={handleSubmit} disabled={uploading} style={{ flex: 1, justifyContent: 'center' }}>

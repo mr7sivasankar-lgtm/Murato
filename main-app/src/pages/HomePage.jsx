@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, ChevronRight, Loader } from 'lucide-react';
-import { Player } from '@lottiefiles/react-lottie-player';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { PRODUCT_CATEGORIES } from '../data/categories';
@@ -14,23 +13,18 @@ const BANNER_HEIGHT = 160;
 
 function HeroSlide({ navigate }) {
   return (
-    <div style={{
-      minWidth: '100%', height: BANNER_HEIGHT, flexShrink: 0, scrollSnapAlign: 'start',
-      background: 'linear-gradient(135deg, #1a2b5f 0%, #243680 60%, #2d4499 100%)',
-      borderRadius: 20, display: 'flex', alignItems: 'center', overflow: 'hidden',
-      position: 'relative',
-    }}>
-      <div style={{ flex: 1, padding: '18px 0 18px 20px', zIndex: 2 }}>
-        <p style={{ fontSize: 18, fontWeight: 900, color: '#fff', lineHeight: 1.2, marginBottom: 5 }}>Build Your<br />Dream Project</p>
-        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5, marginBottom: 12 }}>Cement · Steel · Sand · Machines<br />near you</p>
-        <button
-          style={{ background: '#f5c518', color: '#0f1d45', fontSize: 12, fontWeight: 800, padding: '8px 18px', borderRadius: 50, border: 'none', cursor: 'pointer' }}
-          onClick={() => navigate('/sell')}
-        >Post Ad</button>
-      </div>
-      <div style={{ width: 130, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-        <Player autoplay loop src="https://assets5.lottiefiles.com/packages/lf20_p8bfn5za.json" style={{ height: 130, width: 130 }} />
-      </div>
+    <div
+      onClick={() => navigate('/sell')}
+      style={{
+        minWidth: '100%', height: BANNER_HEIGHT, flexShrink: 0, scrollSnapAlign: 'start',
+        borderRadius: 20, overflow: 'hidden', position: 'relative', cursor: 'pointer',
+      }}
+    >
+      <img
+        src="/hero-banner.png"
+        alt="Build Your Dream Home"
+        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+      />
     </div>
   );
 }
