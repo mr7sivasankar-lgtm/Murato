@@ -67,7 +67,7 @@ function BannerCarousel({ banners, navigate }) {
               }
             }}
             style={{
-              minWidth: '100%', flexShrink: 0, scrollSnapAlign: 'start',
+              minWidth: '100%', height: 160, flexShrink: 0, scrollSnapAlign: 'start',
               cursor: (banner.externalUrl || banner.targetUserId) ? 'pointer' : 'default',
               overflow: 'hidden', background: '#fff',
               userSelect: 'none',
@@ -78,7 +78,7 @@ function BannerCarousel({ banners, navigate }) {
               alt="Promotion"
               draggable="false"
               style={{
-                width: '100%', height: 'auto', display: 'block',
+                width: '100%', height: '100%', display: 'block',
                 objectFit: 'contain',
                 pointerEvents: 'none',
               }}
