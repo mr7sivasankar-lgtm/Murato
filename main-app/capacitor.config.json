@@ -1,0 +1,12 @@
+{
+  "appId": "com.murato.app",
+  "appName": "Murato",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#1a2b5f"
+  }
+}

@@ -9,53 +9,116 @@ import LocationPicker from '../components/LocationPicker';
 import api from '../api/axios';
 import AdCard from '../components/AdCard';
 
-/* ── Auto-scrolling Banner Carousel ── */
-function BannerCarousel({ banners, navigate }) {
+/* ── Unified Hero + Ad Banner Carousel ── */
+const BANNER_HEIGHT = 160;
+
+function HeroSlide({ navigate }) {
+  return (
+    <div style={{
+      minWidth: '100%', height: BANNER_HEIGHT, flexShrink: 0, scrollSnapAlign: 'start',
+      background: 'linear-gradient(135deg, #1a2b5f 0%, #243680 60%, #2d4499 100%)',
+      borderRadius: 20, display: 'flex', alignItems: 'center', overflow: 'hidden',
+      position: 'relative',
+    }}>
+      <div style={{ flex: 1, padding: '18px 0 18px 20px', zIndex: 2 }}>
+        <p style={{ fontSize: 18, fontWeight: 900, color: '#fff', lineHeight: 1.2, marginBottom: 5 }}>Build Your<br />Dream Project</p>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5, marginBottom: 12 }}>Cement · Steel · Sand · Machines<br />near you</p>
+        <button
+          style={{ background: '#f5c518', color: '#0f1d45', fontSize: 12, fontWeight: 800, padding: '8px 18px', borderRadius: 50, border: 'none', cursor: 'pointer' }}
+          onClick={() => navigate('/sell')}
+        >Post Ad</button>
+      </div>
+      <div style={{ width: 130, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+        <Player autoplay loop src="https://assets5.lottiefiles.com/packages/lf20_p8bfn5za.json" style={{ height: 130, width: 130 }} />
+      </div>
+    </div>
+  );
+}
+
+function UnifiedCarousel({ banners, navigate }) {
+  const totalSlides = 1 + banners.length;   // hero + ad banners
   const [active, setActive] = useState(0);
-  const ref = useRef(null);
+  const trackRef = useRef(null);
   const timer = useRef(null);
 
   const goTo = (i) => {
     setActive(i);
-    ref.current?.children[i]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+    if (trackRef.current) {
+      trackRef.current.scrollTo({ left: i * trackRef.current.offsetWidth, behavior: 'smooth' });
+    }
   };
 
+  // Auto-rotate every 3 s
   useEffect(() => {
-    if (banners.length <= 1) return;
+    if (totalSlides <= 1) return;
     timer.current = setInterval(() => {
       setActive(prev => {
-        const next = (prev + 1) % banners.length;
-        ref.current?.children[next]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+        const next = (prev + 1) % totalSlides;
+        if (trackRef.current) {
+          trackRef.current.scrollTo({ left: next * trackRef.current.offsetWidth, behavior: 'smooth' });
+        }
         return next;
       });
-    }, 3500);
+    }, 3000);
     return () => clearInterval(timer.current);
-  }, [banners.length]);
+  }, [totalSlides]);
+
+  // Sync dot when user manually swipes
+  const onScroll = () => {
+    if (!trackRef.current) return;
+    const idx = Math.round(trackRef.current.scrollLeft / trackRef.current.offsetWidth);
+    setActive(idx);
+  };
 
   return (
-    <div className="container" style={{ marginBottom: 24 }}>
-      {/* Scroll container — same style/size as hero-banner */}
-      <div ref={ref} style={{ display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', scrollSnapType: 'x mandatory', gap: 0, borderRadius: 20, boxShadow: '0 4px 20px rgba(26,43,95,0.14)' }}>
-        {banners.map((banner, i) => (
+    <div className="container" style={{ marginBottom: 20 }}>
+      {/* Track */}
+      <div
+        ref={trackRef}
+        onScroll={onScroll}
+        style={{
+          display: 'flex', overflowX: 'auto', scrollbarWidth: 'none',
+          scrollSnapType: 'x mandatory', borderRadius: 20,
+          boxShadow: '0 4px 20px rgba(26,43,95,0.14)',
+        }}
+      >
+        {/* Slide 0: hero */}
+        <HeroSlide navigate={navigate} />
+
+        {/* Slides 1…n: admin ad banners */}
+        {banners.map(banner => (
           <div
             key={banner._id}
             onClick={() => {
-              if (banner.targetUserId?._id || banner.targetUserId) {
-                navigate(`/seller/${banner.targetUserId?._id || banner.targetUserId}`);
-              }
+              if (banner.targetUserId) navigate(`/seller/${banner.targetUserId?._id || banner.targetUserId}`);
             }}
-            style={{ minWidth: '100%', height: 140, flexShrink: 0, scrollSnapAlign: 'start', cursor: banner.targetUserId ? 'pointer' : 'default', position: 'relative', overflow: 'hidden', borderRadius: 20 }}
+            style={{
+              minWidth: '100%', height: BANNER_HEIGHT, flexShrink: 0,
+              scrollSnapAlign: 'start', cursor: banner.targetUserId ? 'pointer' : 'default',
+              borderRadius: 20, overflow: 'hidden',
+            }}
           >
-            <img src={banner.imageUrl} alt="Promotion" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <img
+              src={banner.imageUrl} alt="Promotion"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
           </div>
         ))}
       </div>
 
       {/* Dot indicators */}
-      {banners.length > 1 && (
+      {totalSlides > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
-          {banners.map((_, i) => (
-            <button key={i} onClick={() => goTo(i)} style={{ width: active === i ? 20 : 7, height: 7, borderRadius: 4, background: active === i ? 'var(--navy)' : 'var(--border)', border: 'none', transition: 'all 0.3s', padding: 0, cursor: 'pointer' }} />
+          {Array.from({ length: totalSlides }).map((_, i) => (
+            <button
+              key={i} onClick={() => goTo(i)}
+              style={{
+                width: active === i ? 20 : 7, height: 7,
+                borderRadius: 4, border: 'none', padding: 0, cursor: 'pointer',
+                background: active === i ? 'var(--navy)' : 'var(--border)',
+                transition: 'all 0.3s',
+              }}
+            />
           ))}
         </div>
       )}
@@ -195,22 +258,10 @@ export default function HomePage() {
       </div>
 
 
-      {/* Hero */}
-      <div className="container" style={{ paddingTop: 16 }}>
-        <div className="hero-banner">
-          <div className="hero-text">
-            <p className="hero-title">Build Your<br />Dream Project</p>
-            <p className="hero-sub">Cement · Steel · Sand · Machines<br />near you</p>
-            <button className="hero-btn" onClick={() => navigate('/sell')}>Post Ad</button>
-          </div>
-          <div className="hero-lottie">
-            <Player autoplay loop src="https://assets5.lottiefiles.com/packages/lf20_p8bfn5za.json" style={{ height: 155, width: 155 }} />
-          </div>
-        </div>
+      {/* ── Unified Hero + Ad Banner Carousel ── */}
+      <div style={{ paddingTop: 16 }}>
+        <UnifiedCarousel banners={banners} navigate={navigate} />
       </div>
-
-      {/* ── Admin Promo Banners — below hero ── */}
-      {banners.length > 0 && <BannerCarousel banners={banners} navigate={navigate} />}
 
       {/* Categories — full page width */}
       <div style={{ marginBottom: 28 }}>
