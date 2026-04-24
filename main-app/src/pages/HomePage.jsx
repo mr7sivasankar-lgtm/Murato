@@ -45,14 +45,15 @@ function BannerCarousel({ banners, navigate }) {
   };
 
   return (
-    <div className="container" style={{ marginBottom: 20 }}>
+    <div style={{ marginBottom: 16 }}>
+      {/* Full-width scroll track */}
       <div
         ref={trackRef}
         onScroll={onScroll}
         style={{
           display: 'flex', overflowX: 'auto', scrollbarWidth: 'none',
-          scrollSnapType: 'x mandatory', borderRadius: 20,
-          boxShadow: '0 4px 20px rgba(26,43,95,0.14)',
+          scrollSnapType: 'x mandatory',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {banners.map(banner => (
@@ -66,15 +67,21 @@ function BannerCarousel({ banners, navigate }) {
               }
             }}
             style={{
-              minWidth: '100%', aspectRatio: '16/5', flexShrink: 0,
-              scrollSnapAlign: 'start',
+              minWidth: '100%', flexShrink: 0, scrollSnapAlign: 'start',
               cursor: (banner.externalUrl || banner.targetUserId) ? 'pointer' : 'default',
-              borderRadius: 20, overflow: 'hidden',
+              overflow: 'hidden', background: '#fff',
+              userSelect: 'none',
             }}
           >
             <img
-              src={banner.imageUrl} alt="Promotion"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              src={banner.imageUrl}
+              alt="Promotion"
+              draggable="false"
+              style={{
+                width: '100%', height: 'auto', display: 'block',
+                objectFit: 'contain',
+                pointerEvents: 'none',
+              }}
             />
           </div>
         ))}
@@ -82,7 +89,7 @@ function BannerCarousel({ banners, navigate }) {
 
       {/* Dot indicators */}
       {banners.length > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 8 }}>
           {banners.map((_, i) => (
             <button
               key={i} onClick={() => goTo(i)}
@@ -233,11 +240,7 @@ export default function HomePage() {
 
 
       {/* ── Admin Banners Carousel ── */}
-      {banners.length > 0 && (
-        <div style={{ paddingTop: 16 }}>
-          <BannerCarousel banners={banners} navigate={navigate} />
-        </div>
-      )}
+      {banners.length > 0 && <BannerCarousel banners={banners} navigate={navigate} />}
 
       {/* Categories — full page width */}
       <div style={{ marginBottom: 28 }}>
