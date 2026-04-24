@@ -101,6 +101,7 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
   const isEdit = !!initial;
   const [targetUser, setTargetUser] = useState(initial?.targetUserId?.phone || '');
   const [cities, setCities]         = useState(initial?.targetCities || []);
+  const [externalUrl, setExternalUrl] = useState(initial?.externalUrl || '');
   const [imageFile, setImageFile]   = useState(null);
   const [imagePreview, setImgPrev]  = useState(initial?.imageUrl || null);
 
@@ -112,17 +113,23 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
   const handleImage = (e) => {
     const f = e.target.files[0];
     if (!f) return;
-    if (f.size > 3 * 1024 * 1024) { toast.error('Image must be under 3MB'); return; }
+    if (f.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB'); return; }
     setImageFile(f);
     setImgPrev(URL.createObjectURL(f));
   };
 
   const handleSubmit = () => {
     if (!isEdit && !imageFile) { toast.error('Select a banner image'); return; }
+    // Validate external URL if provided
+    if (externalUrl.trim() && !/^https?:\/\//i.test(externalUrl.trim())) {
+      toast.error('URL must start with https:// or http://');
+      return;
+    }
     const fd = new FormData();
     if (imageFile) fd.append('image', imageFile);
     fd.append('targetUser', targetUser.trim());
     fd.append('targetCities', JSON.stringify(cities));
+    fd.append('externalUrl', externalUrl.trim());
     onSave(fd);
   };
 
@@ -133,7 +140,13 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
 
         {/* Image */}
         <div className="form-group">
-          <label className="form-label">Banner Image {!isEdit && '*'} (16:9 ratio recommended)</label>
+          <label className="form-label">Banner Image {!isEdit && '*'}</label>
+          {/* Spec hint box */}
+          <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '10px 14px', marginBottom: 10, fontSize: 12, color: '#0369a1', lineHeight: 1.7 }}>
+            📐 <strong>Recommended size:</strong> 1200 × 375 px &nbsp;|&nbsp; Ratio: <strong>16:5</strong><br />
+            📁 <strong>Max file size:</strong> 5 MB &nbsp;|&nbsp; Format: JPG, PNG, WebP<br />
+            💡 <em>Tip: Use Canva → Custom size → 1200 × 375 px for a perfect fit with no cropping.</em>
+          </div>
           <input type="file" accept="image/*" onChange={handleImage} style={{ display: 'none' }} id="banner-img" />
           <label htmlFor="banner-img" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 150, border: '2px dashed var(--border)', borderRadius: 12, cursor: 'pointer', background: '#f9fafb', overflow: 'hidden' }}>
             {imagePreview
@@ -153,13 +166,27 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
           <CityTags cities={cities} onRemove={removeCity} />
         </div>
 
-        {/* Target user */}
+        {/* External URL */}
         <div className="form-group">
           <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <User size={14} /> Link to Seller Profile (Optional)
+            🔗 External Link URL <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 12 }}>(Optional)</span>
+          </label>
+          <input
+            className="form-input"
+            placeholder="https://sbi.co.in/home-loan"
+            value={externalUrl}
+            onChange={e => setExternalUrl(e.target.value)}
+          />
+          <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>When users tap this banner, they will be taken to this website. Must start with https://</p>
+        </div>
+
+        {/* Target user (Seller profile link) */}
+        <div className="form-group">
+          <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <User size={14} /> Link to Seller Profile <span style={{ fontWeight: 400, color: 'var(--text-secondary)', fontSize: 12 }}>(Optional)</span>
           </label>
           <input className="form-input" placeholder="Seller phone e.g. 9876543210" value={targetUser} onChange={e => setTargetUser(e.target.value)} />
-          <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>Tapping the banner opens this seller's profile. Leave blank for a general ad.</p>
+          <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>Tapping the banner opens this seller's profile. If External URL is set above, that takes priority.</p>
         </div>
 
         <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
@@ -261,13 +288,21 @@ export default function BannersPage() {
                 )}
               </div>
               <div style={{ padding: 16 }}>
-                {/* Seller link */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+                {/* Seller link / External URL */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
                   <User size={14} color="var(--text-secondary)" style={{ marginTop: 2 }} />
                   {banner.targetUserId
                     ? <div><p style={{ fontWeight: 700, fontSize: 14, color: 'var(--navy)' }}>{banner.targetUserId.businessName || banner.targetUserId.name}</p><p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{banner.targetUserId.phone}</p></div>
                     : <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontStyle: 'italic' }}>General promotion</p>}
                 </div>
+                {banner.externalUrl && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                    <span style={{ fontSize: 13 }}>🔗</span>
+                    <a href={banner.externalUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: 'var(--navy)', fontWeight: 600, wordBreak: 'break-all', textDecoration: 'underline' }}>
+                      {banner.externalUrl}
+                    </a>
+                  </div>
+                )}
 
                 {/* Locations */}
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, marginBottom: 14 }}>

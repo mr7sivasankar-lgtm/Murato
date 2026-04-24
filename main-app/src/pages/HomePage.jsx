@@ -90,11 +90,16 @@ function UnifiedCarousel({ banners, navigate }) {
           <div
             key={banner._id}
             onClick={() => {
-              if (banner.targetUserId) navigate(`/seller/${banner.targetUserId?._id || banner.targetUserId}`);
+              if (banner.externalUrl) {
+                window.open(banner.externalUrl, '_blank', 'noopener,noreferrer');
+              } else if (banner.targetUserId) {
+                navigate(`/seller/${banner.targetUserId?._id || banner.targetUserId}`);
+              }
             }}
             style={{
               minWidth: '100%', height: BANNER_HEIGHT, flexShrink: 0,
-              scrollSnapAlign: 'start', cursor: banner.targetUserId ? 'pointer' : 'default',
+              scrollSnapAlign: 'start',
+              cursor: (banner.externalUrl || banner.targetUserId) ? 'pointer' : 'default',
               borderRadius: 20, overflow: 'hidden',
             }}
           >

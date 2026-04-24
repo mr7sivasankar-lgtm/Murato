@@ -233,7 +233,7 @@ router.post('/banners', adminProtect, upload.single('image'), async (req, res) =
   try {
     if (!req.file) return res.status(400).json({ message: 'Image is required' });
 
-    const { targetUser, targetCities: rawCities } = req.body;
+    const { targetUser, targetCities: rawCities, externalUrl } = req.body;
 
     const user = await resolveUser(targetUser);
     if (targetUser && targetUser.trim() && !user)
@@ -244,6 +244,7 @@ router.post('/banners', adminProtect, upload.single('image'), async (req, res) =
     const banner = await Banner.create({
       imageUrl:     result.secure_url,
       targetUserId: user ? user._id : null,
+      externalUrl:  externalUrl?.trim() || null,
       targetCities: parseCities(rawCities),
       isActive:     true,
     });
@@ -261,7 +262,7 @@ router.put('/banners/:id', adminProtect, upload.single('image'), async (req, res
     const banner = await Banner.findById(req.params.id);
     if (!banner) return res.status(404).json({ message: 'Banner not found' });
 
-    const { targetUser, targetCities: rawCities } = req.body;
+    const { targetUser, targetCities: rawCities, externalUrl } = req.body;
 
     // Update image if a new one was uploaded
     if (req.file) {
@@ -275,6 +276,11 @@ router.put('/banners/:id', adminProtect, upload.single('image'), async (req, res
       if (targetUser && targetUser.trim() && !user)
         return res.status(404).json({ message: 'Target user not found.' });
       banner.targetUserId = user ? user._id : null;
+    }
+
+    // Update external URL
+    if (externalUrl !== undefined) {
+      banner.externalUrl = externalUrl?.trim() || null;
     }
 
     // Update target cities
