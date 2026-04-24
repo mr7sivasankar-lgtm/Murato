@@ -8,29 +8,10 @@ import LocationPicker from '../components/LocationPicker';
 import api from '../api/axios';
 import AdCard from '../components/AdCard';
 
-/* ── Unified Hero + Ad Banner Carousel ── */
+/* ── Admin Banner Carousel ── */
 const BANNER_HEIGHT = 160;
 
-function HeroSlide({ navigate }) {
-  return (
-    <div
-      onClick={() => navigate('/sell')}
-      style={{
-        minWidth: '100%', height: BANNER_HEIGHT, flexShrink: 0, scrollSnapAlign: 'start',
-        borderRadius: 20, overflow: 'hidden', position: 'relative', cursor: 'pointer',
-      }}
-    >
-      <img
-        src="/hero-banner.png"
-        alt="Build Your Dream Home"
-        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
-      />
-    </div>
-  );
-}
-
-function UnifiedCarousel({ banners, navigate }) {
-  const totalSlides = 1 + banners.length;   // hero + ad banners
+function BannerCarousel({ banners, navigate }) {
   const [active, setActive] = useState(0);
   const trackRef = useRef(null);
   const timer = useRef(null);
@@ -44,10 +25,10 @@ function UnifiedCarousel({ banners, navigate }) {
 
   // Auto-rotate every 3 s
   useEffect(() => {
-    if (totalSlides <= 1) return;
+    if (banners.length <= 1) return;
     timer.current = setInterval(() => {
       setActive(prev => {
-        const next = (prev + 1) % totalSlides;
+        const next = (prev + 1) % banners.length;
         if (trackRef.current) {
           trackRef.current.scrollTo({ left: next * trackRef.current.offsetWidth, behavior: 'smooth' });
         }
@@ -55,7 +36,7 @@ function UnifiedCarousel({ banners, navigate }) {
       });
     }, 3000);
     return () => clearInterval(timer.current);
-  }, [totalSlides]);
+  }, [banners.length]);
 
   // Sync dot when user manually swipes
   const onScroll = () => {
@@ -66,7 +47,6 @@ function UnifiedCarousel({ banners, navigate }) {
 
   return (
     <div className="container" style={{ marginBottom: 20 }}>
-      {/* Track */}
       <div
         ref={trackRef}
         onScroll={onScroll}
@@ -76,10 +56,6 @@ function UnifiedCarousel({ banners, navigate }) {
           boxShadow: '0 4px 20px rgba(26,43,95,0.14)',
         }}
       >
-        {/* Slide 0: hero */}
-        <HeroSlide navigate={navigate} />
-
-        {/* Slides 1…n: admin ad banners */}
         {banners.map(banner => (
           <div
             key={banner._id}
@@ -106,9 +82,9 @@ function UnifiedCarousel({ banners, navigate }) {
       </div>
 
       {/* Dot indicators */}
-      {totalSlides > 1 && (
+      {banners.length > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
-          {Array.from({ length: totalSlides }).map((_, i) => (
+          {banners.map((_, i) => (
             <button
               key={i} onClick={() => goTo(i)}
               style={{
@@ -257,10 +233,12 @@ export default function HomePage() {
       </div>
 
 
-      {/* ── Unified Hero + Ad Banner Carousel ── */}
-      <div style={{ paddingTop: 16 }}>
-        <UnifiedCarousel banners={banners} navigate={navigate} />
-      </div>
+      {/* ── Admin Banners Carousel ── */}
+      {banners.length > 0 && (
+        <div style={{ paddingTop: 16 }}>
+          <BannerCarousel banners={banners} navigate={navigate} />
+        </div>
+      )}
 
       {/* Categories — full page width */}
       <div style={{ marginBottom: 28 }}>
