@@ -159,9 +159,9 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
           <label className="form-label">Banner Image {!isEdit && '*'}</label>
           {/* Spec hint box */}
           <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '10px 14px', marginBottom: 10, fontSize: 12, color: '#0369a1', lineHeight: 1.7 }}>
-            📐 <strong>Recommended size:</strong> 1200 × 375 px &nbsp;|&nbsp; Ratio: <strong>16:5</strong><br />
+            📐 <strong>Exact banner size:</strong> <strong style={{ fontSize: 13 }}>1080 × 480 px</strong> &nbsp;|&nbsp; Ratio: <strong>9:4</strong><br />
             📁 <strong>Max file size:</strong> 5 MB &nbsp;|&nbsp; Format: JPG, PNG, WebP<br />
-            💡 <em>Tip: Use Canva → Custom size → 1200 × 375 px for a perfect fit with no cropping.</em>
+            💡 <em>Canva: Custom size → <strong>1080 × 480 px</strong>. The crop tool below will auto-lock to 9:4 so your banner always fits perfectly with no distortion.</em>
           </div>
           <input type="file" accept="image/*" onChange={handleImage} style={{ display: 'none' }} id="banner-img" />
           <label htmlFor="banner-img" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 150, border: '2px dashed var(--border)', borderRadius: 12, cursor: 'pointer', background: '#f9fafb', overflow: 'hidden' }}>
@@ -278,6 +278,7 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
     {cropSrc && (
       <CropModal
         imageSrc={cropSrc}
+        aspectRatio={9 / 4}  // locks banner crop to 1080×480 (9:4) ratio
         onConfirm={onCropConfirm}
         onCancel={onCropCancel}
       />

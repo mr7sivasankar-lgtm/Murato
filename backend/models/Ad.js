@@ -15,6 +15,7 @@ const adSchema = new mongoose.Schema(
 
     // ── Category ─────────────────────────────────────
     category:    { type: String, required: true },
+    categories:  { type: String, default: '' }, // comma-separated multi-select (service)
     subcategory: { type: String, default: '' },
     itemType:    { type: String, default: '' }, // 3rd level
 

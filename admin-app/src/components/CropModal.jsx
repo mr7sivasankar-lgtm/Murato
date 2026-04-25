@@ -1,13 +1,38 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const MIN = 10;
 
-export default function CropModal({ imageSrc, onConfirm, onCancel }) {
+/**
+ * CropModal
+ *  aspectRatio  — optional number (w/h). When provided, resizing corners locks that ratio.
+ *                 e.g. 16/5 for banners, 1 for square.
+ */
+export default function CropModal({ imageSrc, onConfirm, onCancel, aspectRatio = null }) {
   const containerRef = useRef(null);
   const imgRef       = useRef(null);
   const drag         = useRef(null);
+
+  // Initialise full-image crop; if aspectRatio given we'll correct height below
   const [crop, setCrop] = useState({ x: 0, y: 0, w: 100, h: 100 });
+
+  /* ── When image loads, initialise crop to match the required aspect ratio ── */
+  const initCrop = useCallback(() => {
+    if (!aspectRatio || !containerRef.current || !imgRef.current) return;
+
+    // containerRef dimensions are in "percent-space" (width=100%, height depends on img)
+    const cont  = containerRef.current.getBoundingClientRect();
+    const contW = cont.width;
+    const contH = cont.height;
+
+    // In % space: cropH% corresponds to (cropH/100)*contH pixels
+    // We want (cropW/100)*contW / ((cropH/100)*contH) === aspectRatio
+    // → cropH = cropW * contW / (contH * aspectRatio)
+    const cropW = 100;
+    const cropH = clamp((cropW * contW) / (contH * aspectRatio), MIN, 100);
+    const cropY = (100 - cropH) / 2;
+    setCrop({ x: 0, y: cropY, w: cropW, h: cropH });
+  }, [aspectRatio]);
 
   const getXY = (e) => {
     const rect = containerRef.current.getBoundingClientRect();
@@ -17,6 +42,14 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }) {
       y: ((src.clientY - rect.top)  / rect.height) * 100,
     };
   };
+
+  /* ── Convert a free w/h into the locked ratio equivalent (keeps w, adjusts h) ── */
+  const lockH = useCallback((w, x) => {
+    if (!aspectRatio || !containerRef.current || !imgRef.current) return null;
+    const cont = containerRef.current.getBoundingClientRect();
+    // h in % = w% * (contW/contH) / aspectRatio
+    return clamp((w * cont.width) / (cont.height * aspectRatio), MIN, 100 - /* y placeholder */0);
+  }, [aspectRatio]);
 
   const startDrag = (type) => (e) => {
     e.preventDefault(); e.stopPropagation();
@@ -31,20 +64,45 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }) {
     const pt = getXY(e);
     const dx = pt.x - sx, dy = pt.y - sy;
     let { x, y, w, h } = sc;
+
+    const applyRatio = (newW, newX, newY) => {
+      if (!aspectRatio || !containerRef.current) return newW > MIN ? newW : MIN;
+      const cont = containerRef.current.getBoundingClientRect();
+      return clamp((newW * cont.width) / (cont.height * aspectRatio), MIN, 100 - newY);
+    };
+
     if (type === 'move') {
-      x = clamp(sc.x + dx, 0, 100 - w); y = clamp(sc.y + dy, 0, 100 - h);
+      x = clamp(sc.x + dx, 0, 100 - w);
+      y = clamp(sc.y + dy, 0, 100 - h);
     } else if (type === 'br') {
-      w = clamp(sc.w + dx, MIN, 100 - x); h = clamp(sc.h + dy, MIN, 100 - y);
+      w = clamp(sc.w + dx, MIN, 100 - x);
+      h = aspectRatio ? applyRatio(w, x, y) : clamp(sc.h + dy, MIN, 100 - y);
     } else if (type === 'bl') {
-      w = clamp(sc.w - dx, MIN, 100); x = clamp(sc.x + dx, 0, sc.x + sc.w - MIN); h = clamp(sc.h + dy, MIN, 100 - y);
+      w = clamp(sc.w - dx, MIN, 100);
+      x = clamp(sc.x + dx, 0, sc.x + sc.w - MIN);
+      h = aspectRatio ? applyRatio(w, x, y) : clamp(sc.h + dy, MIN, 100 - y);
     } else if (type === 'tr') {
-      w = clamp(sc.w + dx, MIN, 100 - x); h = clamp(sc.h - dy, MIN, 100); y = clamp(sc.y + dy, 0, sc.y + sc.h - MIN);
+      w = clamp(sc.w + dx, MIN, 100 - x);
+      if (aspectRatio) {
+        h = applyRatio(w, x, y);
+        y = clamp(sc.y + sc.h - h, 0, 100 - h);
+      } else {
+        h = clamp(sc.h - dy, MIN, 100);
+        y = clamp(sc.y + dy, 0, sc.y + sc.h - MIN);
+      }
     } else if (type === 'tl') {
-      w = clamp(sc.w - dx, MIN, 100); x = clamp(sc.x + dx, 0, sc.x + sc.w - MIN);
-      h = clamp(sc.h - dy, MIN, 100); y = clamp(sc.y + dy, 0, sc.y + sc.h - MIN);
+      w = clamp(sc.w - dx, MIN, 100);
+      x = clamp(sc.x + dx, 0, sc.x + sc.w - MIN);
+      if (aspectRatio) {
+        h = applyRatio(w, x, y);
+        y = clamp(sc.y + sc.h - h, 0, 100 - h);
+      } else {
+        h = clamp(sc.h - dy, MIN, 100);
+        y = clamp(sc.y + dy, 0, sc.y + sc.h - MIN);
+      }
     }
     setCrop({ x, y, w, h });
-  }, []);
+  }, [aspectRatio]);
 
   const endDrag = () => { drag.current = null; };
 
@@ -70,13 +128,29 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }) {
     { type: 'bl', s: { bottom: -H/2, left: -H/2 } }, { type: 'br', s: { bottom: -H/2, right: -H/2 } },
   ];
 
+  const ratioLabel = aspectRatio
+    ? (() => {
+        // Express ratio as nice fraction label e.g. 9:4, 16:5
+        const pairs = [[9,4],[16,5],[16,7],[4,3],[3,2],[16,9],[1,1]];
+        const best = pairs.reduce((prev, [w,h]) => {
+          const diff = Math.abs(aspectRatio - w/h);
+          return diff < prev.diff ? { w, h, diff } : prev;
+        }, { w: 1, h: 1, diff: Infinity });
+        return `${best.w}:${best.h}`;
+      })()
+    : null;
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 700 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div>
             <h3 style={{ color: 'white', fontWeight: 800, fontSize: 18, margin: 0 }}>✂️ Crop Banner Image</h3>
-            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, marginTop: 4 }}>Drag the box · resize corners · click "Use Crop" when ready</p>
+            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, marginTop: 4 }}>
+              {aspectRatio
+                ? `Ratio locked to ${ratioLabel} — drag to reposition · drag corners to resize`
+                : 'Drag the box · resize corners · click "Use Crop" when ready'}
+            </p>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={onCancel} style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: 'none', borderRadius: 10, padding: '9px 20px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Cancel</button>
@@ -85,6 +159,15 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }) {
           </div>
         </div>
 
+        {/* Ratio guide pill */}
+        {aspectRatio && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+            <span style={{ background: '#2563eb', color: 'white', fontSize: 12, fontWeight: 700, padding: '4px 14px', borderRadius: 20 }}>
+              🔒 Locked ratio: {ratioLabel} &nbsp;|&nbsp; Recommended: 1080 × 480 px
+            </span>
+          </div>
+        )}
+
         <div
           ref={containerRef}
           style={{ position: 'relative', background: '#000', borderRadius: 12, overflow: 'hidden', touchAction: 'none', userSelect: 'none', cursor: 'crosshair' }}
@@ -92,8 +175,11 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }) {
           onMouseUp={endDrag} onTouchEnd={endDrag}
           onMouseLeave={endDrag}
         >
-          <img ref={imgRef} src={imageSrc} alt="crop" draggable={false}
-            style={{ width: '100%', display: 'block', maxHeight: '60vh', objectFit: 'contain' }} />
+          <img
+            ref={imgRef} src={imageSrc} alt="crop" draggable={false}
+            style={{ width: '100%', display: 'block', maxHeight: '60vh', objectFit: 'contain' }}
+            onLoad={initCrop}
+          />
 
           {[
             { top: 0, left: 0, right: 0, height: `${crop.y}%` },
@@ -108,6 +194,7 @@ export default function CropModal({ imageSrc, onConfirm, onCancel }) {
             onMouseDown={startDrag('move')} onTouchStart={startDrag('move')}
             style={{ position: 'absolute', left: `${crop.x}%`, top: `${crop.y}%`, width: `${crop.w}%`, height: `${crop.h}%`, border: '2px solid white', boxSizing: 'border-box', cursor: 'move', touchAction: 'none' }}
           >
+            {/* Rule-of-thirds grid */}
             <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
               {[33.3, 66.6].map(p => (
                 <div key={p}>

@@ -37,47 +37,51 @@ function BannerCarousel({ banners, navigate }) {
   };
 
   return (
-    <div style={{ overflow: 'hidden' }}>
-      {/* Slide track — CSS transform drives the animation */}
-      <div
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        style={{
-          display: 'flex',
-          transform: `translateX(-${active * 100}%)`,
-          transition: 'transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)',
-          willChange: 'transform',
-        }}
-      >
-        {banners.map(banner => (
-          <div
-            key={banner._id}
-            onClick={() => {
-              if (banner.externalUrl) {
-                window.open(banner.externalUrl, '_blank', 'noopener,noreferrer');
-              } else if (banner.targetUserId) {
-                navigate(`/seller/${banner.targetUserId?._id || banner.targetUserId}`);
-              }
-            }}
-            style={{
-              flex: '0 0 100%', minWidth: '100%', height: 160,
-              cursor: (banner.externalUrl || banner.targetUserId) ? 'pointer' : 'default',
-              overflow: 'hidden', background: '#fff', userSelect: 'none',
-            }}
-          >
-            <img
-              src={banner.imageUrl}
-              alt="Promotion"
-              draggable="false"
-              style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', pointerEvents: 'none' }}
-            />
-          </div>
-        ))}
+    // FIX 3: outer wrapper has NO overflow:hidden so dots below are visible
+    <div>
+      {/* Slide track — overflow:hidden only around the images */}
+      <div style={{ overflow: 'hidden', borderRadius: 20 }}>
+        <div
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+          style={{
+            display: 'flex',
+            transform: `translateX(-${active * 100}%)`,
+            transition: 'transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'transform',
+          }}
+        >
+          {banners.map(banner => (
+            <div
+              key={banner._id}
+              onClick={() => {
+                if (banner.externalUrl) {
+                  window.open(banner.externalUrl, '_blank', 'noopener,noreferrer');
+                } else if (banner.targetUserId) {
+                  navigate(`/seller/${banner.targetUserId?._id || banner.targetUserId}`);
+                }
+              }}
+              style={{
+                flex: '0 0 100%', minWidth: '100%',
+                height: 160,          // ← exact banner height (1200×375 → 16:5 ratio at mobile width)
+                cursor: (banner.externalUrl || banner.targetUserId) ? 'pointer' : 'default',
+                overflow: 'hidden', background: '#fff', userSelect: 'none',
+              }}
+            >
+              <img
+                src={banner.imageUrl}
+                alt="Promotion"
+                draggable="false"
+                style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', pointerEvents: 'none' }}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Dot indicators */}
+      {/* FIX 3: Dot indicators OUTSIDE the clipping container — render below the banner */}
       {banners.length > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 8, marginBottom: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 8 }}>
           {banners.map((_, i) => (
             <button
               key={i} onClick={() => goTo(i)}
@@ -254,7 +258,7 @@ export default function HomePage() {
 
       {/* ── Admin Banners Carousel ── */}
       {banners.length > 0 && (
-        <div style={{ margin: '12px 16px', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(26,43,95,0.13)' }}>
+        <div style={{ margin: '12px 16px', borderRadius: 20, boxShadow: '0 4px 20px rgba(26,43,95,0.13)' }}>
           <BannerCarousel banners={banners} navigate={navigate} />
         </div>
       )}

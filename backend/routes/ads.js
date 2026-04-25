@@ -13,7 +13,7 @@ const PRODUCT_FIELDS = [
   'businessName','whatsappAvailable','contactMode',
 ];
 const SERVICE_FIELDS = [
-  'title','description','category','subcategory','itemType',
+  'title','description','category','categories','subcategory','itemType',
   'experienceYears','teamSize','projectsDone','pricingType','price',
   'serviceRadius','availability','availableFrom','travelAvailable',
   'materialIncluded','urgentWork','businessName','whatsappAvailable','contactMode',
