@@ -81,7 +81,7 @@ function BannerCarousel({ banners, navigate }) {
               draggable="false"
               style={{
                 width: '100%', height: '100%', display: 'block',
-                objectFit: 'contain',
+                objectFit: 'cover',
                 pointerEvents: 'none',
               }}
             />

@@ -2,13 +2,14 @@ import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Camera, X, MapPin, Navigation,
-  Phone, MessageCircle, Package, Wrench, Search, Check,
+  Phone, Package, Wrench, Search, Check, Image,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { PRODUCT_CATEGORIES, SERVICE_CATEGORIES, UNIT_LABELS, PRICE_TYPE_LABELS } from '../data/categories';
 import LocationPicker from '../components/LocationPicker';
 import MapPinPicker from '../components/MapPinPicker';
+import CropModal from '../components/CropModal';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
@@ -116,7 +117,8 @@ export default function SellPage() {
   const location = useLocation();
   const { user } = useAuth();
   const { t } = useLanguage();
-  const fileRef  = useRef();
+  const fileRef   = useRef();
+  const cameraRef = useRef();
 
   const editAd = location.state?.ad || null;
 
@@ -126,6 +128,9 @@ export default function SellPage() {
   const [showLocPicker, setShowLocPicker] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [detecting, setDetecting] = useState(false);
+  // Crop queue: each item = { file, src } waiting to be cropped
+  const [cropQueue,  setCropQueue]  = useState([]);
+  const [cropIndex,  setCropIndex]  = useState(0);
 
   // ── Product form ──────────────────────────────────────────────────────────
   const [pForm, setPForm] = useState({
@@ -188,20 +193,45 @@ export default function SellPage() {
   const pSet = (k, v) => setPForm(f => ({ ...f, [k]: v }));
   const sSet = (k, v) => setSForm(f => ({ ...f, [k]: v }));
 
-  // ── Image handling — use FileReader for Android WebView compat ────────────
-  const handleImages = (e) => {
-    const files = Array.from(e.target.files);
-    if (images.length + files.length > 5) { toast.error('Max 5 images'); return; }
-    // Read each file as base64 for preview; keep original File for upload
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setImages(prev => [...prev, { file, preview: ev.target.result }]);
-      };
-      reader.readAsDataURL(file);
-    });
+  // ── Image handling — open crop modal for each selected file ────────────────
+  const openCropFlow = (files) => {
+    const remaining = 5 - images.length;
+    const picked = Array.from(files).slice(0, remaining);
+    if (!picked.length) { toast.error('Max 5 images'); return; }
+    const queue = picked.map(file => ({
+      file,
+      src: URL.createObjectURL(file),
+    }));
+    setCropQueue(queue);
+    setCropIndex(0);
   };
-  const removeImage = (i) => setImages(prev => prev.filter((_, idx) => idx !== i));
+
+  const handleImages   = (e) => { openCropFlow(e.target.files); e.target.value = ''; };
+  const handleCamera   = (e) => { openCropFlow(e.target.files); e.target.value = ''; };
+  const removeImage    = (i)  => setImages(prev => prev.filter((_, idx) => idx !== i));
+
+  // Called when user confirms a crop
+  const onCropConfirm = ({ file, preview }) => {
+    setImages(prev => [...prev, { file, preview }]);
+    const next = cropIndex + 1;
+    if (next < cropQueue.length) {
+      setCropIndex(next);
+    } else {
+      setCropQueue([]);
+      setCropIndex(0);
+    }
+  };
+
+  // Called when user cancels crop — skip this image, continue with next
+  const onCropCancel = () => {
+    const next = cropIndex + 1;
+    if (next < cropQueue.length) {
+      setCropIndex(next);
+    } else {
+      setCropQueue([]);
+      setCropIndex(0);
+    }
+  };
 
   // ── GPS detect location — Capacitor Geolocation for Android permissions ──
   const detectGPS = async () => {
@@ -371,7 +401,10 @@ export default function SellPage() {
 
         {/* Photos */}
         <Section title={t('photos')} icon="📷">
-          <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleImages} />
+          {/* Hidden file inputs */}
+          <input ref={fileRef}   type="file" accept="image/*" multiple capture={undefined} style={{ display: 'none' }} onChange={handleImages} />
+          <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleCamera} />
+
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {images.map((img, i) => (
               <div key={i} style={{ position: 'relative', width: 80, height: 80 }}>
@@ -381,14 +414,25 @@ export default function SellPage() {
                 </button>
               </div>
             ))}
-            {images.length < 5 && (
-              <button onClick={() => fileRef.current?.click()} style={{ width: 80, height: 80, borderRadius: 10, border: '2px dashed var(--border)', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer', color: 'var(--text-muted)' }}>
-                <Camera size={20} />
-                <span style={{ fontSize: 10 }}>Add Photo</span>
-              </button>
-            )}
           </div>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>Up to 5 photos · First photo is cover</p>
+
+          {images.length < 5 && (
+            <div style={{ display: 'flex', gap: 10, marginTop: images.length ? 10 : 0 }}>
+              {/* Gallery picker */}
+              <button onClick={() => fileRef.current?.click()}
+                style={{ flex: 1, height: 72, borderRadius: 12, border: '2px dashed var(--border)', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, cursor: 'pointer', color: 'var(--text-muted)' }}>
+                <Image size={20} />
+                <span style={{ fontSize: 11, fontWeight: 600 }}>Gallery</span>
+              </button>
+              {/* Camera */}
+              <button onClick={() => cameraRef.current?.click()}
+                style={{ flex: 1, height: 72, borderRadius: 12, border: '2px dashed #7c3aed', background: '#faf5ff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, cursor: 'pointer', color: '#7c3aed' }}>
+                <Camera size={20} />
+                <span style={{ fontSize: 11, fontWeight: 600 }}>Camera</span>
+              </button>
+            </div>
+          )}
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>Up to 5 photos · First photo is cover · Tap to crop</p>
         </Section>
 
         {/* Basic Details */}
@@ -733,6 +777,16 @@ export default function SellPage() {
         initialLat={form.lat}
         initialLng={form.lng}
       />
+
+      {/* Crop Modal — shown for each image in queue */}
+      {cropQueue.length > 0 && cropIndex < cropQueue.length && (
+        <CropModal
+          imageSrc={cropQueue[cropIndex].src}
+          imageFile={cropQueue[cropIndex].file}
+          onConfirm={onCropConfirm}
+          onCancel={onCropCancel}
+        />
+      )}
     </div>
   );
 }
