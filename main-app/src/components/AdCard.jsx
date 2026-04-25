@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, MapPin, Star, Package, Wrench, ChevronRight, Navigation } from 'lucide-react';
+import { Heart, MapPin, Star, ChevronRight, Navigation } from 'lucide-react';
 import { PRICE_TYPE_LABELS } from '../data/categories';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
@@ -14,9 +14,10 @@ const CAT_ICONS = {
   'Electrician': '⚡', 'Plumber': '🔧', 'Painter': '🎨',
   'Tile Worker': '🏠', 'Welder': '🔩', 'Labor / Helpers': '👷',
   'Interior Designer': '🛋️', 'Architect': '📐', 'Fabricator': '⚙️',
+  'Machines & Equipment': '⚙️', 'Software': '💻',
 };
 
-// Haversine distance in km between two [lng, lat] coordinate pairs
+// Haversine distance
 function distKm(c1, c2) {
   if (!c1 || !c2 || (c1[0] === 0 && c1[1] === 0) || (c2[0] === 0 && c2[1] === 0)) return null;
   const R = 6371, toRad = d => d * Math.PI / 180;
@@ -26,12 +27,12 @@ function distKm(c1, c2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-const StarRow = ({ avg = 0, count = 0, size = 11 }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+export const StarRow = ({ avg = 0, count = 0, size = 11 }) => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
     {[1,2,3,4,5].map(s => (
-      <Star key={s} size={size} fill={s <= Math.round(avg) ? '#f5c518' : 'none'} color={s <= Math.round(avg) ? '#f5c518' : '#d1d5db'} />
+      <Star key={s} size={size} fill={s <= Math.round(avg) ? '#f5c518' : 'none'} color={s <= Math.round(avg) ? '#f5c518' : '#e5e7eb'} />
     ))}
-    {count > 0 && <span style={{ fontSize: size - 1, color: '#6b7280', marginLeft: 2 }}>({count})</span>}
+    {count > 0 && <span style={{ fontSize: size - 1, color: '#9ca3af', marginLeft: 3 }}>({count})</span>}
   </div>
 );
 
@@ -42,15 +43,13 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
 
   const seller     = ad.userId || {};
   const priceLabel = PRICE_TYPE_LABELS[ad.priceType] || '';
-  const catIcon    = CAT_ICONS[ad.category] || '🏠';
   const isService  = ad.type === 'service';
 
-  // All categories: prefer ad.categories (comma-separated), fallback to ad.category
+  // All categories: prefer ad.categories (comma-sep), fallback to ad.category
   const allCategories = ad.categories
     ? ad.categories.split(',').map(c => c.trim()).filter(Boolean)
     : (ad.category ? [ad.category] : []);
 
-  // Distance from user to seller (product ads only, not workers)
   const userCoords = user?.location?.coordinates;
   const adCoords   = ad.location?.coordinates;
   const km = !isService ? distKm(userCoords, adCoords) : null;
@@ -58,169 +57,172 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
   const handleFav = async (e) => {
     e.preventDefault(); e.stopPropagation();
     try { await api.post(`/ads/${ad._id}/favorite`); setFaved(!faved); onFavToggle?.(ad._id); }
-    catch { /* not logged in */ }
+    catch {}
   };
-
-  // Card → AdDetailPage
   const handleCardClick = () => navigate(`/ads/${ad._id}`);
-
-  // Seller row → SellerProfilePage (stops card click propagating)
   const handleSellerClick = (e) => {
     e.stopPropagation();
-    const sellerId = ad.userId?._id || ad.userId;
-    if (sellerId) navigate(`/seller/${sellerId}`);
+    const id = ad.userId?._id || ad.userId;
+    if (id) navigate(`/seller/${id}`);
   };
 
-  const imageHeight = compact ? 90 : 130;
+  const imgH = compact ? 80 : 110;
+  const sellerName = ad.businessName || seller.businessName || seller.name || 'Seller';
 
   return (
     <div
       onClick={handleCardClick}
       style={{
-        background: 'white', borderRadius: 16, overflow: 'hidden',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.07)', cursor: 'pointer',
-        transition: 'transform 0.18s, box-shadow 0.18s', position: 'relative',
+        background: 'white',
+        borderRadius: 18,
+        overflow: 'hidden',
+        boxShadow: '0 2px 16px rgba(124,58,237,0.08)',
+        cursor: 'pointer',
+        transition: 'transform 0.18s, box-shadow 0.18s',
+        position: 'relative',
+        border: '1px solid rgba(124,58,237,0.07)',
       }}
-      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)'; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.07)'; }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(124,58,237,0.15)'; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 2px 16px rgba(124,58,237,0.08)'; }}
     >
-      {/* ── Image ─────────────────────────────────────── */}
+      {/* ── Image ── */}
       {ad.images?.[0] ? (
         <img
           src={ad.images[0]}
           alt={ad.title}
-          style={{
-            width: '100%',
-            height: imageHeight,
-            objectFit: 'cover',     // ← FIX 1: was 'contain', now covers full area
-            objectPosition: 'center',
-            display: 'block',
-            background: '#f8f9fb',
-          }}
+          style={{ width: '100%', height: imgH, objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
         />
       ) : (
-        <div style={{ width: '100%', height: imageHeight, background: 'linear-gradient(135deg,#e8edf5,#d1d9ef)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44 }}>
-          {catIcon}
+        <div style={{
+          width: '100%', height: imgH,
+          background: 'linear-gradient(135deg,#ede9fe,#ddd6fe)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36,
+        }}>
+          {CAT_ICONS[ad.category] || (isService ? '🔧' : '📦')}
         </div>
       )}
 
-      {/* ── Featured badge (top-left) — only FEATURED stays on image ── */}
+      {/* FEATURED badge on image */}
       {ad.isFeatured && (
-        <div style={{ position: 'absolute', top: 8, left: 8 }}>
-          <span style={{ background: '#f5c518', color: '#1a2b5f', fontSize: 9, fontWeight: 800, padding: '3px 7px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 3 }}>
-            <Star size={8} fill="#1a2b5f" color="#1a2b5f" /> FEATURED
-          </span>
-        </div>
+        <span style={{
+          position: 'absolute', top: 7, left: 7,
+          background: '#f5c518', color: '#1a2b5f',
+          fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 6,
+        }}>⭐ FEATURED</span>
       )}
 
-      {/* ── Fav button (top-right) ── */}
+      {/* Fav button */}
       <button
         onClick={handleFav}
-        style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '50%', width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+        style={{
+          position: 'absolute', top: 7, right: 7,
+          background: 'rgba(255,255,255,0.92)', border: 'none', borderRadius: '50%',
+          width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+        }}
       >
-        <Heart size={14} fill={faved ? '#ef4444' : 'none'} color={faved ? '#ef4444' : '#9ca3af'} />
+        <Heart size={13} fill={faved ? '#ef4444' : 'none'} color={faved ? '#ef4444' : '#9ca3af'} />
       </button>
 
-      {/* ── Body ──────────────────────────────────────── */}
-      <div style={{ padding: '10px 10px 8px' }}>
+      {/* ── Card Body ── */}
+      <div style={{ padding: compact ? '8px 9px 9px' : '10px 11px 11px' }}>
 
-        {/* FIX 5: Service/Product tag + NEGO moved HERE (below image, inside body) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6, flexWrap: 'wrap' }}>
-          <span style={{
-            background: isService ? '#7c3aed' : '#1a2b5f',
-            color: 'white', fontSize: 9, fontWeight: 700,
-            padding: '3px 7px', borderRadius: 6,
-            display: 'inline-flex', alignItems: 'center', gap: 3,
+        {/* Seller name + verified */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+          <p style={{
+            fontSize: compact ? 12 : 13, fontWeight: 700, color: '#1a1a2e',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1,
           }}>
-            {isService ? <Wrench size={8} /> : <Package size={8} />}
-            {isService ? 'SERVICE' : 'MATERIAL'}
-          </span>
-          {ad.negotiable && (
-            <span style={{ background: '#10b981', color: 'white', fontSize: 9, fontWeight: 700, padding: '3px 7px', borderRadius: 6 }}>NEGO</span>
+            {sellerName}
+          </p>
+          <span style={{ fontSize: 11, color: '#3b82f6', flexShrink: 0 }}>✅</span>
+        </div>
+
+        {/* Stars + Location */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, flexWrap: 'wrap' }}>
+          {seller.ratingAvg > 0
+            ? <StarRow avg={seller.ratingAvg} count={seller.ratingCount} />
+            : <StarRow avg={4} count={0} />
+          }
+          {ad.location?.city && (
+            <span style={{ fontSize: 10, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 2 }}>
+              <MapPin size={9} /> {ad.location.city}
+            </span>
+          )}
+          {km !== null && (
+            <span style={{ fontSize: 9, color: '#7c3aed', background: '#f3f0ff', padding: '1px 5px', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Navigation size={7} /> {km < 1 ? '<1' : Math.round(km)} km
+            </span>
           )}
         </div>
 
-        {/* FIX 2: All categories in bold chips — wrap if multiple */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 5 }}>
+        {/* Category chips — ALL categories in bold */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 6 }}>
           {allCategories.map((cat, i) => (
             <span
               key={i}
               style={{
-                fontSize: 11,
-                fontWeight: 800,          // ← Bold as requested
-                color: '#1a2b5f',
-                background: '#eef2ff',
-                padding: '2px 7px',
-                borderRadius: 5,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 3,
+                fontSize: 10, fontWeight: 700, color: '#5b21b6',
+                background: '#ede9fe', padding: '2px 7px', borderRadius: 20,
+                display: 'inline-flex', alignItems: 'center', gap: 2,
+                whiteSpace: 'nowrap',
               }}
             >
               {CAT_ICONS[cat] || '🏠'} {cat}
-              {i === 0 && ad.subcategory ? <span style={{ fontWeight: 500, color: '#6b7280' }}> · {ad.subcategory}</span> : null}
             </span>
           ))}
+          {/* Title shown after categories */}
+          <p style={{
+            width: '100%', fontSize: 11, fontWeight: 500, color: '#6b7280',
+            lineHeight: 1.3, marginTop: 2,
+            overflow: 'hidden', display: '-webkit-box',
+            WebkitLineClamp: 1, WebkitBoxOrient: 'vertical',
+          }}>
+            {ad.title}
+          </p>
         </div>
 
-        {/* Title — clearly visible */}
-        <p style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.3, marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {ad.title}
-        </p>
-
-        {/* Brand */}
-        {ad.brand && <p style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>Brand: <strong style={{ color: '#1a2b5f' }}>{ad.brand}</strong></p>}
-
-        {/* Price */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
-          <span style={{ fontSize: 17, fontWeight: 900, color: '#1a2b5f' }}>₹{Number(ad.price).toLocaleString('en-IN')}</span>
-          {priceLabel && <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 600 }}>{priceLabel}</span>}
-        </div>
-
-        {/* Location + date + distance */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-            {ad.location?.city && (
-              <span style={{ fontSize: 11, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 3 }}>
-                <MapPin size={10} /> {ad.location.city}{ad.location.area ? `, ${ad.location.area}` : ''}
-              </span>
-            )}
-            {km !== null ? (
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#7c3aed', background: '#f3f0ff', padding: '1px 6px', borderRadius: 5, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Navigation size={8} /> {km < 1 ? '<1' : Math.round(km)} km
-              </span>
-            ) : (!isService && (
-              <span style={{ fontSize: 9, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Navigation size={8} /> No GPS
-              </span>
-            ))}
+        {/* Price + View Profile button */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+          <div>
+            <span style={{ fontSize: compact ? 14 : 15, fontWeight: 900, color: '#1a2b5f' }}>
+              ₹{Number(ad.price).toLocaleString('en-IN')}
+            </span>
+            {priceLabel && <span style={{ fontSize: 9, color: '#9ca3af', marginLeft: 3 }}>{priceLabel}</span>}
           </div>
-          <span style={{ fontSize: 10, color: '#9ca3af' }}>
+          <button
+            onClick={handleSellerClick}
+            style={{
+              background: 'linear-gradient(135deg,#7c3aed,#4f46e5)',
+              color: 'white', border: 'none', borderRadius: 20,
+              padding: compact ? '4px 8px' : '5px 10px',
+              fontSize: compact ? 9 : 10, fontWeight: 700, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+          >
+            View Profile <ChevronRight size={10} />
+          </button>
+        </div>
+
+        {/* NEGO + Type badges inline at bottom */}
+        <div style={{ display: 'flex', gap: 4, marginTop: 5, flexWrap: 'wrap' }}>
+          <span style={{
+            fontSize: 9, fontWeight: 700,
+            color: isService ? '#7c3aed' : '#1a2b5f',
+            background: isService ? '#ede9fe' : '#eef2ff',
+            padding: '2px 6px', borderRadius: 4,
+          }}>
+            {isService ? '🔧 SERVICE' : '📦 MATERIAL'}
+          </span>
+          {ad.negotiable && (
+            <span style={{ fontSize: 9, fontWeight: 700, color: '#059669', background: '#d1fae5', padding: '2px 6px', borderRadius: 4 }}>NEGO</span>
+          )}
+          <span style={{ fontSize: 9, color: '#9ca3af', marginLeft: 'auto' }}>
             {new Date(ad.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
           </span>
-        </div>
-
-        {/* Seller row — tap to view seller profile */}
-        <div
-          onClick={handleSellerClick}
-          style={{ borderTop: '1px solid #f3f4f6', paddingTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-            <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'linear-gradient(135deg,#1a2b5f,#243680)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'white', fontWeight: 700, flexShrink: 0 }}>
-              {(ad.businessName || seller.businessName || seller.name || '?')[0].toUpperCase()}
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: 11, fontWeight: 600, color: '#1a2b5f', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {ad.businessName || seller.businessName || seller.name || 'Seller'}
-              </p>
-              {(seller.ratingAvg > 0) && <StarRow avg={seller.ratingAvg} count={seller.ratingCount} />}
-            </div>
-          </div>
-          <ChevronRight size={14} color="#9ca3af" style={{ flexShrink: 0 }} />
         </div>
       </div>
     </div>
   );
 }
-
-export { StarRow };

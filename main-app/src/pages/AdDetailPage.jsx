@@ -133,7 +133,15 @@ export default function AdDetailPage() {
           </div>
           <h1 style={{ fontSize: 18, fontWeight: 800, marginBottom: 10, lineHeight: 1.3 }}>{ad.title}</h1>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <span className="badge" style={{ background: '#f0f3fc', color: 'var(--navy)' }}>{ad.category}</span>
+            {/* Show ALL selected categories */}
+            {(ad.categories
+              ? ad.categories.split(',').map(c => c.trim()).filter(Boolean)
+              : [ad.category]
+            ).map((cat, i) => (
+              <span key={i} className="badge" style={{ background: '#ede9fe', color: '#6d28d9', fontWeight: 800, fontSize: 12 }}>
+                {cat}
+              </span>
+            ))}
             {ad.subcategory && <span className="badge" style={{ background: '#f3f4f6', color: '#374151' }}>{ad.subcategory}</span>}
             {!isService && ad.condition && <span className="badge" style={{ background: '#f3f4f6', color: '#374151' }}>{ad.condition === 'used' ? '🔄 Used' : '✨ New'}</span>}
           </div>
