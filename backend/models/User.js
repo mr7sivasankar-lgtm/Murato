@@ -28,6 +28,9 @@ const userSchema = new mongoose.Schema(
 
     // 4-digit login PIN (stored as string)
     pin: { type: String, default: '' },
+
+    // Firebase Cloud Messaging token for push notifications
+    fcmToken: { type: String, default: '' },
   },
   { timestamps: true }
 );

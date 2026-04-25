@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Image, Trash2, Plus, Power, MapPin, User, Search, X, Edit2 } from 'lucide-react';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
+import CropModal from '../components/CropModal';
 
 /* ── Nominatim city autocomplete ── */
 function LocationInput({ onAdd }) {
@@ -104,6 +105,7 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
   const [externalUrl, setExternalUrl] = useState(initial?.externalUrl || '');
   const [imageFile, setImageFile]   = useState(null);
   const [imagePreview, setImgPrev]  = useState(initial?.imageUrl || null);
+  const [cropSrc, setCropSrc]       = useState(null); // raw src before crop
 
   const addCity = (city) => {
     if (!cities.includes(city)) setCities(p => [...p, city]);
@@ -114,8 +116,21 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
     const f = e.target.files[0];
     if (!f) return;
     if (f.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB'); return; }
+    // Open crop modal first
+    setCropSrc(URL.createObjectURL(f));
+    // Temporarily store file for name reference
     setImageFile(f);
-    setImgPrev(URL.createObjectURL(f));
+  };
+
+  const onCropConfirm = ({ file, preview }) => {
+    if (file) setImageFile(file);  // use cropped file
+    setImgPrev(preview);
+    setCropSrc(null);
+  };
+
+  const onCropCancel = () => {
+    setCropSrc(null);
+    setImageFile(null);
   };
 
   const handleSubmit = () => {
@@ -134,6 +149,7 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
   };
 
   return (
+    <>
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" style={{ maxWidth: 540, maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
         <h3 className="modal-title">{isEdit ? '✏️ Edit Banner' : '🖼️ Create New Banner'}</h3>
@@ -257,7 +273,16 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
         </div>
       </div>
     </div>
-  );
+
+    {/* Crop Modal — rendered outside the modal div so it overlays everything */}
+    {cropSrc && (
+      <CropModal
+        imageSrc={cropSrc}
+        onConfirm={onCropConfirm}
+        onCancel={onCropCancel}
+      />
+    )}
+  </>);
 }
 
 /* ── Main Page ── */

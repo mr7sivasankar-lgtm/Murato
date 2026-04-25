@@ -20,10 +20,10 @@ function BannerCarousel({ banners, navigate }) {
   const next = () => setActive(prev => (prev + 1) % banners.length);
   const prev = () => setActive(prev => (prev - 1 + banners.length) % banners.length);
 
-  // Auto-rotate every 3.5s — right to left (increasing index)
+  // Auto-rotate every 3.5s — left to right (decreasing index = new slide from left)
   useEffect(() => {
     if (banners.length <= 1) return;
-    timer.current = setInterval(next, 3500);
+    timer.current = setInterval(prev, 3500);
     return () => clearInterval(timer.current);
   }, [banners.length]);
 

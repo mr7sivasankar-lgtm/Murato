@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import BottomNav from './components/BottomNav';
 import { useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
+import { initPush, clearPushListeners } from './services/PushNotificationService';
 
 /* ── Android hardware back-button handler ── */
 function AndroidBackHandler() {
@@ -45,6 +46,20 @@ function AndroidBackHandler() {
   return null;
 }
 
+/* ── Init push notifications when user logs in ── */
+function PushNotificationInitialiser() {
+  const { user } = useAuth();
+  useEffect(() => {
+    if (user) {
+      initPush();
+    } else {
+      clearPushListeners();
+    }
+    return () => {};
+  }, [!!user]);
+  return null;
+}
+
 // Pages
 import HomePage           from './pages/HomePage';
 import LoginPage          from './pages/LoginPage';
@@ -77,6 +92,7 @@ function AppRoutes() {
   return (
     <>
       <AndroidBackHandler />
+      <PushNotificationInitialiser />
       <Routes>
         <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         <Route path="/login" element={<LoginPage />} />

@@ -29,8 +29,11 @@ export default function ProfilePage() {
   const { lang, setLang, t } = useLanguage();
   const [adsCount,      setAdsCount]      = useState(0);
   const [showSupport,   setShowSupport]   = useState(false);
+  const [showMyTickets, setShowMyTickets] = useState(false);
   const [supportSubject, setSupportSubject] = useState('');
   const [supportMsg,    setSupportMsg]    = useState('');
+  const [myTickets,     setMyTickets]     = useState([]);
+  const [ticketsLoading,setTicketsLoading]= useState(false);
   const [showChangePin, setShowChangePin] = useState(false);
   const [currentPin,    setCurrentPin]    = useState('');
   const [newPin,        setNewPin]        = useState('');
@@ -41,6 +44,10 @@ export default function ProfilePage() {
     if (!user) { navigate('/login'); return; }
     api.get(`/ads/user/${user._id || user.id}`)
       .then(r => setAdsCount(r.data?.length || 0))
+      .catch(() => {});
+    // Load user's support tickets
+    api.get('/support/my')
+      .then(r => setMyTickets(r.data || []))
       .catch(() => {});
   }, []);
 
@@ -68,7 +75,8 @@ export default function ProfilePage() {
       return toast.error('Please fill subject and message');
     setSending(true);
     try {
-      await api.post('/support', { subject: supportSubject, message: supportMsg });
+      const { data } = await api.post('/support', { subject: supportSubject, message: supportMsg });
+      setMyTickets(prev => [data, ...prev]);
       toast.success('✅ Support request sent!');
       setShowSupport(false);
       setSupportSubject('');
@@ -197,7 +205,22 @@ export default function ProfilePage() {
       <div style={{ background: 'white', marginBottom: 12, boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
         <MenuItem icon={<Settings size={18} />} label={t('settings')} sub={t('editProfilePref')} onClick={() => navigate('/settings')} color="#6b7280" />
         <MenuItem icon={<Lock size={18} />} label={t('changePin')} sub={t('updatePin')} onClick={() => setShowChangePin(true)} color="#8b5cf6" />
-        <MenuItem icon={<LifeBuoy size={18} />} label={t('support')} sub={t('reportIssue')} onClick={() => setShowSupport(true)} color="#f59e0b" />
+        <MenuItem
+          icon={<LifeBuoy size={18} />}
+          label={t('support')}
+          sub={myTickets.length > 0 ? `${myTickets.length} ticket${myTickets.length > 1 ? 's' : ''}` : t('reportIssue')}
+          onClick={() => setShowSupport(true)}
+          color="#f59e0b"
+        />
+        {myTickets.length > 0 && (
+          <MenuItem
+            icon={<MessageSquare size={18} />}
+            label="My Tickets"
+            sub={`${myTickets.filter(t => t.adminNote).length} response${myTickets.filter(t => t.adminNote).length !== 1 ? 's' : ''} from admin`}
+            onClick={() => setShowMyTickets(true)}
+            color="#10b981"
+          />
+        )}
       </div>
 
       <div style={{ background: 'white', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
@@ -229,6 +252,47 @@ export default function ProfilePage() {
             </div>
             <button className="btn btn-primary" style={{ width: '100%', borderRadius: 50 }} onClick={handleChangePinSubmit} disabled={changingPin}>
               {changingPin ? 'Saving...' : 'Update PIN'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── My Tickets Sheet ── */}
+      {showMyTickets && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 3000 }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }} onClick={() => setShowMyTickets(false)} />
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'white', borderRadius: '24px 24px 0 0', padding: '20px 20px 40px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+              <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--navy)' }}>🎫 My Support Tickets</h3>
+              <button onClick={() => setShowMyTickets(false)} style={{ background: '#f3f4f6', border: 'none', borderRadius: 8, padding: 6, cursor: 'pointer', display: 'flex' }}><X size={18} /></button>
+            </div>
+            {myTickets.map(tk => {
+              const statusColor = tk.status === 'resolved' ? '#10b981' : tk.status === 'in_progress' ? '#f59e0b' : '#6b7280';
+              const statusLabel = tk.status === 'resolved' ? '✅ Resolved' : tk.status === 'in_progress' ? '⏳ In Progress' : '🔴 Open';
+              return (
+                <div key={tk._id} style={{ borderRadius: 14, border: `1.5px solid ${statusColor}33`, overflow: 'hidden', marginBottom: 12 }}>
+                  <div style={{ padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, borderBottom: tk.adminNote ? '1px solid var(--border)' : 'none' }}>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)', marginBottom: 3 }}>{tk.subject}</p>
+                      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>{tk.message}</p>
+                      <p style={{ fontSize: 11, color: '#9ca3af' }}>{new Date(tk.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: statusColor, background: `${statusColor}18`, borderRadius: 20, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}>{statusLabel}</span>
+                  </div>
+                  {tk.adminNote && (
+                    <div style={{ padding: '12px 14px', background: '#eff6ff', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>👨‍💼</div>
+                      <div>
+                        <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--navy)', marginBottom: 4 }}>Admin Response</p>
+                        <p style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6 }}>{tk.adminNote}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            <button className="btn btn-primary" style={{ width: '100%', borderRadius: 50, marginTop: 8 }} onClick={() => { setShowMyTickets(false); setShowSupport(true); }}>
+              + New Ticket
             </button>
           </div>
         </div>

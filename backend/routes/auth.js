@@ -216,4 +216,16 @@ router.get('/me', protect, async (req, res) => {
   res.json(userPayload(u));
 });
 
+// @PUT /api/auth/fcm-token  — save device FCM token for push notifications
+router.put('/fcm-token', protect, async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    if (!fcmToken) return res.status(400).json({ message: 'fcmToken is required' });
+    await User.findByIdAndUpdate(req.user._id, { fcmToken });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
