@@ -23,8 +23,13 @@ const server = http.createServer(app);
 // CORS setup
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:3000',
   'https://murato.vercel.app',
   'https://murato-admin.vercel.app',
+  // Capacitor Android & iOS apps send these origins
+  'capacitor://localhost',
+  'https://localhost',
+  'http://localhost',
   // Allow all Vercel preview domains dynamically
   /^https:\/\/murato.*\.vercel\.app$/
 ];
