@@ -21,6 +21,18 @@ router.post('/', protect, async (req, res) => {
   }
 });
 
+// @GET /api/support/my  — user: see their own tickets + admin replies
+router.get('/my', protect, async (req, res) => {
+  try {
+    const tickets = await SupportTicket.find({ userId: req.user._id })
+      .sort({ createdAt: -1 })
+      .select('subject message status adminNote createdAt updatedAt');
+    res.json(tickets);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // @GET /api/support  — admin: list all tickets
 router.get('/', adminProtect, async (req, res) => {
   try {

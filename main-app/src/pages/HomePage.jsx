@@ -12,49 +12,41 @@ import AdCard from '../components/AdCard';
 
 function BannerCarousel({ banners, navigate }) {
   const [active, setActive] = useState(0);
-  const trackRef = useRef(null);
   const timer = useRef(null);
+  const touchStartX = useRef(null);
 
-  const goTo = (i) => {
-    setActive(i);
-    if (trackRef.current) {
-      trackRef.current.scrollTo({ left: i * trackRef.current.offsetWidth, behavior: 'smooth' });
-    }
-  };
+  const goTo = (i) => setActive(i);
 
-  // Auto-rotate every 3 s
+  const next = () => setActive(prev => (prev + 1) % banners.length);
+  const prev = () => setActive(prev => (prev - 1 + banners.length) % banners.length);
+
+  // Auto-rotate every 3.5s — right to left (increasing index)
   useEffect(() => {
     if (banners.length <= 1) return;
-    timer.current = setInterval(() => {
-      setActive(prev => {
-        const next = (prev + 1) % banners.length;
-        if (trackRef.current) {
-          trackRef.current.scrollTo({ left: next * trackRef.current.offsetWidth, behavior: 'smooth' });
-        }
-        return next;
-      });
-    }, 3000);
+    timer.current = setInterval(next, 3500);
     return () => clearInterval(timer.current);
   }, [banners.length]);
 
-  // Sync dot when user manually swipes
-  const onScroll = () => {
-    if (!trackRef.current) return;
-    const idx = Math.round(trackRef.current.scrollLeft / trackRef.current.offsetWidth);
-    setActive(idx);
+  // Swipe support
+  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const onTouchEnd   = (e) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) > 40) { dx < 0 ? next() : prev(); }
+    touchStartX.current = null;
   };
 
   return (
-    <div style={{ marginBottom: 0, overflow: 'hidden' }}>
-      {/* Full-width scroll track — use 100vw per slide to fix mobile half-banner */}
+    <div style={{ overflow: 'hidden' }}>
+      {/* Slide track — CSS transform drives the animation */}
       <div
-        ref={trackRef}
-        onScroll={onScroll}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
         style={{
-          display: 'flex', overflowX: 'auto', scrollbarWidth: 'none',
-          scrollSnapType: 'x mandatory',
-          WebkitOverflowScrolling: 'touch',
-          msOverflowStyle: 'none',
+          display: 'flex',
+          transform: `translateX(-${active * 100}%)`,
+          transition: 'transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)',
+          willChange: 'transform',
         }}
       >
         {banners.map(banner => (
@@ -68,22 +60,16 @@ function BannerCarousel({ banners, navigate }) {
               }
             }}
             style={{
-              flex: '0 0 100vw', width: '100vw', height: 160,
-              scrollSnapAlign: 'start', scrollSnapStop: 'always',
+              flex: '0 0 100%', minWidth: '100%', height: 160,
               cursor: (banner.externalUrl || banner.targetUserId) ? 'pointer' : 'default',
-              overflow: 'hidden', background: '#fff',
-              userSelect: 'none',
+              overflow: 'hidden', background: '#fff', userSelect: 'none',
             }}
           >
             <img
               src={banner.imageUrl}
               alt="Promotion"
               draggable="false"
-              style={{
-                width: '100%', height: '100%', display: 'block',
-                objectFit: 'cover',
-                pointerEvents: 'none',
-              }}
+              style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', pointerEvents: 'none' }}
             />
           </div>
         ))}
@@ -108,6 +94,7 @@ function BannerCarousel({ banners, navigate }) {
     </div>
   );
 }
+
 
 
 export default function HomePage() {

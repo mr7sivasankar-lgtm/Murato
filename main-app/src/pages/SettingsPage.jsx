@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, User, Phone, MapPin, Bell, Moon, Info,
-  Save, ChevronRight, MessageCircle, Store, Star,
+  Save, ChevronRight, MessageCircle, Store, Star, TicketCheck, Clock,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import LocationPicker from '../components/LocationPicker';
@@ -55,6 +55,26 @@ export default function SettingsPage() {
   const [notifs,           setNotifs]           = useState(true);
   const [saving,           setSaving]           = useState(false);
   const [showLocPicker,    setShowLocPicker]    = useState(false);
+
+  // Support ticket state
+  const [showSupport,    setShowSupport]    = useState(false);
+  const [ticketSubject,  setTicketSubject]  = useState('');
+  const [ticketMsg,      setTicketMsg]      = useState('');
+  const [ticketSending,  setTicketSending]  = useState(false);
+  const [myTickets,      setMyTickets]      = useState([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+
+  useEffect(() => {
+    const loadTickets = async () => {
+      setTicketsLoading(true);
+      try {
+        const { data } = await api.get('/support/my');
+        setMyTickets(data);
+      } catch { /* silent */ }
+      finally { setTicketsLoading(false); }
+    };
+    loadTickets();
+  }, []);
 
   const handleSave = async () => {
     if (!name.trim()) { toast.error('Name cannot be empty'); return; }
@@ -229,6 +249,91 @@ export default function SettingsPage() {
             <div><p style={{ fontSize: 14, fontWeight: 600 }}>App Version</p><p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Murato v2.0.0 · Build 2026</p></div>
           </div>
         </div>
+
+        {/* ── Support ── */}
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Support</p>
+        <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', marginBottom: 20, boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+
+          {/* Contact support button */}
+          <div
+            onClick={() => setShowSupport(s => !s)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: showSupport ? '1px solid var(--border)' : 'none', cursor: 'pointer' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fce7f3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🎫</div>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 600 }}>Contact Support</p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Report issues or get help</p>
+              </div>
+            </div>
+            <ChevronRight size={16} color="var(--text-muted)" style={{ transform: showSupport ? 'rotate(90deg)' : 'none', transition: '0.2s' }} />
+          </div>
+
+          {showSupport && (
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+              <div className="form-group">
+                <label className="form-label">Subject *</label>
+                <input className="form-input" placeholder="e.g. Payment issue, Fake listing..." value={ticketSubject} onChange={e => setTicketSubject(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Message *</label>
+                <textarea className="form-input" rows={4} placeholder="Describe your issue in detail..." value={ticketMsg} onChange={e => setTicketMsg(e.target.value)} style={{ resize: 'vertical' }} />
+              </div>
+              <button
+                disabled={ticketSending}
+                onClick={async () => {
+                  if (!ticketSubject.trim() || !ticketMsg.trim()) { toast.error('Fill all fields'); return; }
+                  setTicketSending(true);
+                  try {
+                    const { data } = await api.post('/support', { subject: ticketSubject.trim(), message: ticketMsg.trim() });
+                    setMyTickets(prev => [data, ...prev]);
+                    setTicketSubject(''); setTicketMsg(''); setShowSupport(false);
+                    toast.success('Ticket submitted! ✅ We will respond soon.');
+                  } catch { toast.error('Failed to submit'); }
+                  finally { setTicketSending(false); }
+                }}
+                className="btn btn-primary"
+                style={{ borderRadius: 50, fontWeight: 700, fontSize: 14, opacity: ticketSending ? 0.7 : 1 }}
+              >
+                📨 {ticketSending ? 'Sending...' : 'Send Message'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* My Tickets */}
+        {myTickets.length > 0 && (
+          <>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>My Tickets</p>
+            <div style={{ marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {myTickets.map(tk => {
+                const statusColor = tk.status === 'resolved' ? '#10b981' : tk.status === 'in_progress' ? '#f59e0b' : '#6b7280';
+                const statusLabel = tk.status === 'resolved' ? '✅ Resolved' : tk.status === 'in_progress' ? '⏳ In Progress' : '🔴 Open';
+                return (
+                  <div key={tk._id} style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)', border: `1.5px solid ${statusColor}22` }}>
+                    <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, borderBottom: tk.adminNote ? '1px solid var(--border)' : 'none' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 3 }}>{tk.subject}</p>
+                        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tk.message}</p>
+                        <p style={{ fontSize: 11, color: '#9ca3af' }}>{new Date(tk.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: statusColor, background: `${statusColor}18`, borderRadius: 20, padding: '4px 10px', whiteSpace: 'nowrap', flexShrink: 0 }}>{statusLabel}</span>
+                    </div>
+                    {tk.adminNote && (
+                      <div style={{ padding: '12px 16px', background: '#f0f9ff', display: 'flex', gap: 10 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>👨‍💼</div>
+                        <div>
+                          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--navy)', marginBottom: 3 }}>Admin Response</p>
+                          <p style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.5 }}>{tk.adminNote}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         {/* Save */}
         <button onClick={handleSave} disabled={saving} className="btn btn-primary" style={{ borderRadius: 50, fontWeight: 800, fontSize: 16, marginBottom: 12 }}>
