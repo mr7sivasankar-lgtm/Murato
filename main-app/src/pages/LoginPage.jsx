@@ -8,7 +8,9 @@ import api from '../api/axios';
 /* ── 4-digit PIN input ── Mobile-compatible via single hidden input ── */
 function PinInput({ value, onChange, onComplete, error }) {
   const hiddenRef = useRef();
+  const [focused, setFocused] = useState(false);
   const digits = (value + '    ').slice(0, 4).split('');
+  const activeIndex = value.length < 4 ? value.length : 3;
 
   const handleChange = (e) => {
     const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
@@ -17,8 +19,8 @@ function PinInput({ value, onChange, onComplete, error }) {
   };
 
   return (
-    <div style={{ position: 'relative' }}>
-      {/* Hidden real input that captures keyboard */}
+    <div style={{ position: 'relative' }} onClick={() => hiddenRef.current?.focus()}>
+      {/* Hidden real input — font-size 16px prevents Android auto-zoom */}
       <input
         ref={hiddenRef}
         type="tel"
@@ -27,34 +29,78 @@ function PinInput({ value, onChange, onComplete, error }) {
         maxLength={4}
         value={value}
         onChange={handleChange}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         autoFocus
         style={{
-          position: 'absolute', opacity: 0, width: '100%', height: '100%',
-          top: 0, left: 0, zIndex: 2, cursor: 'pointer', fontSize: 1,
+          position: 'absolute',
+          opacity: 0,
+          width: '100%',
+          height: '100%',
+          top: 0,
+          left: 0,
+          zIndex: 2,
+          cursor: 'pointer',
+          fontSize: 16,          /* must be >=16px to prevent Android zoom */
+          caretColor: 'transparent',
         }}
       />
       {/* Visual digit boxes */}
-      <div
-        style={{ display: 'flex', gap: 12, justifyContent: 'center', position: 'relative', zIndex: 1 }}
-        onClick={() => hiddenRef.current?.focus()}
-      >
-        {[0, 1, 2, 3].map(i => (
-          <div
-            key={i}
-            style={{
-              width: 64, height: 68, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 28, fontWeight: 800,
-              border: `2.5px solid ${error ? '#ef4444' : digits[i].trim() ? '#1a2b5f' : '#e5e7eb'}`,
-              borderRadius: 16,
-              background: error ? '#fef2f2' : digits[i].trim() ? '#f0f3fc' : 'white',
-              color: '#1a2b5f',
-              transition: 'all 0.2s',
-              animation: error ? 'pin-shake 0.4s ease' : 'none',
-            }}
-          >
-            {digits[i].trim() ? '•' : ''}
-          </div>
-        ))}
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'center', position: 'relative', zIndex: 1, pointerEvents: 'none' }}>
+        {[0, 1, 2, 3].map(i => {
+          const isFilled  = digits[i].trim() !== '';
+          const isActive  = focused && i === activeIndex;
+          const borderColor = error
+            ? '#ef4444'
+            : isActive
+            ? '#2563eb'
+            : isFilled
+            ? '#1a2b5f'
+            : '#e5e7eb';
+          const bgColor = error
+            ? '#fef2f2'
+            : isActive
+            ? '#eff6ff'
+            : isFilled
+            ? '#f0f3fc'
+            : 'white';
+
+          return (
+            <div
+              key={i}
+              style={{
+                width: 64,
+                height: 68,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 28,
+                fontWeight: 800,
+                border: `2.5px solid ${borderColor}`,
+                borderRadius: 16,
+                background: bgColor,
+                color: '#1a2b5f',
+                transition: 'all 0.15s',
+                animation: error ? 'pin-shake 0.4s ease' : 'none',
+                boxShadow: isActive ? '0 0 0 3px rgba(37,99,235,0.18)' : 'none',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+            >
+              {isFilled ? '•' : isActive ? (
+                /* blinking cursor line */
+                <span style={{
+                  display: 'inline-block',
+                  width: 2,
+                  height: 28,
+                  background: '#2563eb',
+                  borderRadius: 2,
+                  animation: 'pin-cursor 1s step-end infinite',
+                }} />
+              ) : null}
+            </div>
+          );
+        })}
       </div>
       {/* Inline error message */}
       {error && (

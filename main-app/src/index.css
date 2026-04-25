@@ -35,6 +35,10 @@
   60% { transform: translateX(-4px); }
   80% { transform: translateX(4px); }
 }
+@keyframes pin-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
 @keyframes pageEnter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }

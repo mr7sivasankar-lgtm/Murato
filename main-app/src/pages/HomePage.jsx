@@ -126,33 +126,48 @@ export default function HomePage() {
   const [displayCity, setDisplayCity] = useState(user?.location?.city || '');
   const [locLoading, setLocLoading] = useState(false);
 
-  // Auto-detect GPS on mount
+  // Auto-detect GPS on mount — use Capacitor Geolocation on Android for proper permission prompt
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setDisplayCity(user?.location?.city || 'Set Location');
-      return;
-    }
-    setLocLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords: { latitude: lat, longitude: lng } }) => {
+    const detectLocation = async () => {
+      setLocLoading(true);
+      try {
+        let lat, lng;
+
+        // Try Capacitor Geolocation first (proper Android permission dialog)
         try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`
-          );
-          const d = await res.json();
-          const a = d.address || {};
-          const city = a.city || a.town || a.village || a.county || user?.location?.city || '';
-          setDisplayCity(city);
+          const { Geolocation } = await import('@capacitor/geolocation');
+          await Geolocation.requestPermissions();
+          const pos = await Geolocation.getCurrentPosition({ timeout: 8000, enableHighAccuracy: false });
+          lat = pos.coords.latitude;
+          lng = pos.coords.longitude;
         } catch {
-          setDisplayCity(user?.location?.city || 'Set Location');
-        } finally { setLocLoading(false); }
-      },
-      () => {
+          // Fallback to browser geolocation (web)
+          if (!navigator.geolocation) {
+            setDisplayCity(user?.location?.city || 'Set Location');
+            setLocLoading(false);
+            return;
+          }
+          const pos = await new Promise((resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
+          );
+          lat = pos.coords.latitude;
+          lng = pos.coords.longitude;
+        }
+
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`
+        );
+        const d = await res.json();
+        const a = d.address || {};
+        const city = a.city || a.town || a.village || a.county || user?.location?.city || '';
+        setDisplayCity(city);
+      } catch {
         setDisplayCity(user?.location?.city || 'Set Location');
+      } finally {
         setLocLoading(false);
-      },
-      { timeout: 5000, enableHighAccuracy: false }
-    );
+      }
+    };
+    detectLocation();
   }, []);
 
   useEffect(() => { fetchAds(); }, [activeCategory, displayCity]);
@@ -223,8 +238,17 @@ export default function HomePage() {
           {/* Center: Brand */}
           <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)', letterSpacing: '-0.5px' }}>Murato</span>
 
-          {/* Right: spacer */}
-          <div style={{ width: 60 }} />
+          {/* Right: greeting */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{
+              background: 'var(--navy)', color: 'white',
+              borderRadius: 20, padding: '4px 12px',
+              fontSize: 13, fontWeight: 700, letterSpacing: 0.2,
+              whiteSpace: 'nowrap',
+            }}>
+              Hi, {user?.name?.split(' ')[0] || 'User'} 👋
+            </div>
+          </div>
         </div>
 
         {/* Search Bar */}
@@ -242,14 +266,20 @@ export default function HomePage() {
 
 
       {/* ── Admin Banners Carousel ── */}
-      {banners.length > 0 && <BannerCarousel banners={banners} navigate={navigate} />}
+      {banners.length > 0 && (
+        <div style={{ margin: '12px 16px', borderRadius: 20, overflow: 'hidden', boxShadow: '0 4px 20px rgba(26,43,95,0.13)' }}>
+          <BannerCarousel banners={banners} navigate={navigate} />
+        </div>
+      )}
 
-      {/* Categories — full page width, with top & bottom divider */}
+      {/* Categories */}
       <div style={{
-        borderTop: '1px solid var(--border)',
-        borderBottom: '1px solid var(--border)',
-        paddingTop: 16, paddingBottom: 16,
-        marginBottom: 24, background: '#fff',
+        margin: '0 16px 20px',
+        borderRadius: 20,
+        border: '1px solid var(--border)',
+        overflow: 'hidden',
+        background: '#fff',
+        boxShadow: '0 2px 12px rgba(26,43,95,0.07)',
       }}>
         <div style={{ padding: '0 20px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>

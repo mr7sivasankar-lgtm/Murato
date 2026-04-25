@@ -188,35 +188,54 @@ export default function SellPage() {
   const pSet = (k, v) => setPForm(f => ({ ...f, [k]: v }));
   const sSet = (k, v) => setSForm(f => ({ ...f, [k]: v }));
 
-  // ── Image handling ────────────────────────────────────────────────────────
+  // ── Image handling — use FileReader for Android WebView compat ────────────
   const handleImages = (e) => {
     const files = Array.from(e.target.files);
     if (images.length + files.length > 5) { toast.error('Max 5 images'); return; }
-    setImages(prev => [...prev, ...files]);
+    // Read each file as base64 for preview; keep original File for upload
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setImages(prev => [...prev, { file, preview: ev.target.result }]);
+      };
+      reader.readAsDataURL(file);
+    });
   };
   const removeImage = (i) => setImages(prev => prev.filter((_, idx) => idx !== i));
 
-  // ── GPS detect location ───────────────────────────────────────────────────
+  // ── GPS detect location — Capacitor Geolocation for Android permissions ──
   const detectGPS = async () => {
-    if (!navigator.geolocation) { toast.error('Geolocation not supported'); return; }
     setDetecting(true);
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords: { latitude: lat, longitude: lng } }) => {
-        try {
-          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`);
-          const d = await r.json();
-          const a = d.address || {};
-          const city = a.city || a.town || a.village || a.county || '';
-          const area = a.suburb || a.neighbourhood || a.road || '';
-          if (adType === 'product') { pSet('city', city); pSet('area', area); pSet('lat', lat); pSet('lng', lng); }
-          else                      { sSet('city', city); sSet('area', area); sSet('lat', lat); sSet('lng', lng); }
-          toast.success('📍 Location detected!');
-        } catch { toast.error('Could not get address'); }
-        setDetecting(false);
-      },
-      () => { setDetecting(false); toast.error('Location permission denied'); },
-      { timeout: 10000, enableHighAccuracy: true }
-    );
+    try {
+      let lat, lng;
+      try {
+        const { Geolocation } = await import('@capacitor/geolocation');
+        await Geolocation.requestPermissions();
+        const pos = await Geolocation.getCurrentPosition({ timeout: 10000, enableHighAccuracy: true });
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+      } catch {
+        // Fallback to browser API
+        if (!navigator.geolocation) { toast.error('Geolocation not supported'); setDetecting(false); return; }
+        const pos = await new Promise((res, rej) =>
+          navigator.geolocation.getCurrentPosition(res, rej, { timeout: 10000, enableHighAccuracy: true })
+        );
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+      }
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`);
+      const d = await r.json();
+      const a = d.address || {};
+      const city = a.city || a.town || a.village || a.county || '';
+      const area = a.suburb || a.neighbourhood || a.road || '';
+      if (adType === 'product') { pSet('city', city); pSet('area', area); pSet('lat', lat); pSet('lng', lng); }
+      else                      { sSet('city', city); sSet('area', area); sSet('lat', lat); sSet('lng', lng); }
+      toast.success('📍 Location detected!');
+    } catch {
+      toast.error('Location permission denied');
+    } finally {
+      setDetecting(false);
+    }
   };
 
   // ── LocationPicker callback ───────────────────────────────────────────────
@@ -261,7 +280,7 @@ export default function SellPage() {
       if (adType === 'service' && sForm.categories.length)
         fd.set('category', sForm.categories[0]);
 
-      images.forEach(img => fd.append('images', img));
+      images.forEach(item => fd.append('images', item.file));
 
       if (editAd) {
         await api.put(`/ads/${editAd._id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -356,7 +375,7 @@ export default function SellPage() {
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {images.map((img, i) => (
               <div key={i} style={{ position: 'relative', width: 80, height: 80 }}>
-                <img src={URL.createObjectURL(img)} alt="" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 10 }} />
+                <img src={img.preview} alt="" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 10 }} />
                 <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: -6, right: -6, background: '#ef4444', border: 'none', borderRadius: '50%', width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white' }}>
                   <X size={12} />
                 </button>

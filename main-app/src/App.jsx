@@ -1,7 +1,49 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import BottomNav from './components/BottomNav';
+import { useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
+
+/* ── Android hardware back-button handler ── */
+function AndroidBackHandler() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const lastBackRef = useRef(0);
+
+  useEffect(() => {
+    let removeListener = null;
+
+    const setup = async () => {
+      try {
+        const { App } = await import('@capacitor/app');
+        const listener = await App.addListener('backButton', () => {
+          // If not on home, just go back in history
+          if (location.pathname !== '/') {
+            navigate(-1);
+            return;
+          }
+          // On home — double-press to exit
+          const now = Date.now();
+          if (now - lastBackRef.current < 2000) {
+            App.exitApp();
+          } else {
+            lastBackRef.current = now;
+            toast('Press back again to exit', { icon: '👋', duration: 2000 });
+          }
+        });
+        removeListener = () => listener.remove();
+      } catch {
+        // Not running inside Capacitor (web browser) — ignore
+      }
+    };
+
+    setup();
+    return () => { removeListener?.(); };
+  }, [location.pathname, navigate]);
+
+  return null;
+}
 
 // Pages
 import HomePage           from './pages/HomePage';
@@ -34,6 +76,7 @@ function AppRoutes() {
 
   return (
     <>
+      <AndroidBackHandler />
       <Routes>
         <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         <Route path="/login" element={<LoginPage />} />
