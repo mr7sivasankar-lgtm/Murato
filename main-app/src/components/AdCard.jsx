@@ -71,7 +71,7 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
     if (sellerId) navigate(`/seller/${sellerId}`);
   };
 
-  const imageHeight = compact ? 90 : 130;
+  const imageHeight = compact ? 80 : 105;
 
   return (
     <div
@@ -122,7 +122,7 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
       </button>
 
       {/* ── Body ──────────────────────────────────────── */}
-      <div style={{ padding: '10px 10px 8px' }}>
+      <div style={{ padding: '8px 8px 6px' }}>
 
         {/* FIX 5: Service/Product tag + NEGO moved HERE (below image, inside body) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6, flexWrap: 'wrap' }}>
@@ -164,7 +164,7 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
         </div>
 
         {/* Title — clearly visible */}
-        <p style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.3, marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.3, marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {ad.title}
         </p>
 
@@ -173,8 +173,8 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
 
         {/* Price */}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
-          <span style={{ fontSize: 17, fontWeight: 900, color: '#1a2b5f' }}>₹{Number(ad.price).toLocaleString('en-IN')}</span>
-          {priceLabel && <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 600 }}>{priceLabel}</span>}
+          <span style={{ fontSize: 15, fontWeight: 900, color: '#1a2b5f' }}>₹{Number(ad.price).toLocaleString('en-IN')}</span>
+          {priceLabel && <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 600 }}>{priceLabel}</span>}
         </div>
 
         {/* Location + date + distance */}

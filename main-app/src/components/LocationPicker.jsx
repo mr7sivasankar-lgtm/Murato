@@ -58,8 +58,7 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
             return { display: `${city}${state ? ', ' + state : ''}`, city, area, lat: r.lat, lng: r.lon };
           })
           .filter(r => r.city) // only results with a city
-          .filter((r, i, arr) => arr.findIndex(x => x.city === r.city) === i) // dedupe by city
-          .filter(r => fuzzyMatch(r.display, search));
+          .filter((r, i, arr) => arr.findIndex(x => x.city === r.city) === i); // dedupe by city
 
         setSuggestions(results);
       } catch {

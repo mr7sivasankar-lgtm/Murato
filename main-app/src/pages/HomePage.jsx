@@ -115,6 +115,7 @@ export default function HomePage() {
 
   // Location: prefer GPS-detected, fallback to user profile
   const [displayCity, setDisplayCity] = useState(user?.location?.city || '');
+  const [displayCoords, setDisplayCoords] = useState(user?.location?.coordinates || null);
   const [locLoading, setLocLoading] = useState(false);
 
   // Auto-detect GPS on mount — use Capacitor Geolocation on Android for proper permission prompt
@@ -131,6 +132,7 @@ export default function HomePage() {
           const pos = await Geolocation.getCurrentPosition({ timeout: 8000, enableHighAccuracy: false });
           lat = pos.coords.latitude;
           lng = pos.coords.longitude;
+          setDisplayCoords([lng, lat]);
         } catch {
           // Fallback to browser geolocation (web)
           if (!navigator.geolocation) {
@@ -143,6 +145,7 @@ export default function HomePage() {
           );
           lat = pos.coords.latitude;
           lng = pos.coords.longitude;
+          setDisplayCoords([lng, lat]);
         }
 
         const res = await fetch(
@@ -180,7 +183,13 @@ export default function HomePage() {
       setLoading(true);
       const params = { limit: 20 };
       if (activeCategory) params.category = activeCategory;
-      if (displayCity && displayCity !== 'Set Location') params.city = displayCity;
+      if (displayCoords && displayCoords[0] !== 0 && displayCoords[1] !== 0) {
+        params.lng = displayCoords[0];
+        params.lat = displayCoords[1];
+        params.radius = 30; // 30km radius covers nearby villages with the same pincode
+      } else if (displayCity && displayCity !== 'Set Location') {
+        params.city = displayCity;
+      }
       const { data } = await api.get('/ads', { params });
       setAds(data.ads || []);
     } catch { setAds([]); }
@@ -197,9 +206,19 @@ export default function HomePage() {
     if (searchQuery.trim()) navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
   };
 
-  const handleLocationSelect = ({ city, area }) => {
+  const handleLocationSelect = ({ city, area, lat, lng }) => {
     setDisplayCity(city);
-    if (updateUser) updateUser({ location: { ...user?.location, city, area } });
+    if (lat && lng) setDisplayCoords([parseFloat(lng), parseFloat(lat)]);
+    if (updateUser) {
+      updateUser({ 
+        location: { 
+          ...user?.location, 
+          city, 
+          area, 
+          coordinates: (lat && lng) ? [parseFloat(lng), parseFloat(lat)] : user?.location?.coordinates 
+        } 
+      });
+    }
   };
 
   return (

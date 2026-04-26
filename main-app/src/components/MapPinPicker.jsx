@@ -71,6 +71,7 @@ export default function MapPinPicker({ isOpen, onClose, onConfirm, initialLat, i
       const map = new window.google.maps.Map(mapRef.current, {
         center: { lat, lng }, zoom: 14,
         mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+        gestureHandling: 'greedy',
       });
 
       const marker = new window.google.maps.Marker({
