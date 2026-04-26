@@ -283,14 +283,7 @@ export default function HomePage() {
       )}
 
       {/* Categories */}
-      <div style={{
-        margin: '0 16px 20px',
-        borderRadius: 20,
-        border: '1px solid var(--border)',
-        overflow: 'hidden',
-        background: '#fff',
-        boxShadow: '0 2px 12px rgba(26,43,95,0.07)',
-      }}>
+      <div style={{ margin: '16px 0 24px' }}>
         <div style={{ padding: '0 20px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>
             {t('browseCategories')} <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginLeft: 4 }}>{PRODUCT_CATEGORIES.length}+</span>
