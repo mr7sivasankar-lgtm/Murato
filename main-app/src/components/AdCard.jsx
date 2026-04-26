@@ -83,24 +83,38 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.07)'; }}
     >
       {/* ── Image ─────────────────────────────────────── */}
-      {ad.images?.[0] ? (
-        <img
-          src={ad.images[0]}
-          alt={ad.title}
-          style={{
-            width: '100%',
-            aspectRatio: '4/3',
-            objectFit: 'cover',
-            objectPosition: 'center',
-            display: 'block',
-            background: '#f8f9fb',
-          }}
-        />
-      ) : (
-        <div style={{ width: '100%', aspectRatio: '4/3', background: 'linear-gradient(135deg,#e8edf5,#d1d9ef)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44 }}>
-          {catIcon}
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '4/3', background: '#f8f9fb' }}>
+        {ad.images?.[0] ? (
+          <img
+            src={ad.images[0]}
+            alt={ad.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+          />
+        ) : (
+          <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#e8edf5,#d1d9ef)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44 }}>
+            {catIcon}
+          </div>
+        )}
+
+        {/* ── Tags (bottom-right on image) ── */}
+        <div style={{ position: 'absolute', bottom: 8, right: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <span style={{
+            background: isService ? '#7c3aed' : '#1a2b5f',
+            color: 'white', fontSize: 9, fontWeight: 700,
+            padding: '3px 7px', borderRadius: 6,
+            display: 'inline-flex', alignItems: 'center', gap: 3,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+          }}>
+            {isService ? <Wrench size={8} /> : <Package size={8} />}
+            {isService ? 'SERVICE' : 'MATERIAL'}
+          </span>
+          {ad.negotiable && (
+            <span style={{ background: '#10b981', color: 'white', fontSize: 9, fontWeight: 700, padding: '3px 7px', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
+              NEGO
+            </span>
+          )}
         </div>
-      )}
+      </div>
 
       {/* ── Featured badge (top-left) — only FEATURED stays on image ── */}
       {ad.isFeatured && (
@@ -121,22 +135,6 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
 
       {/* ── Body ──────────────────────────────────────── */}
       <div style={{ padding: '10px 10px 8px' }}>
-
-        {/* FIX 5: Service/Product tag + NEGO moved HERE (below image, inside body) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 6, flexWrap: 'wrap' }}>
-          <span style={{
-            background: isService ? '#7c3aed' : '#1a2b5f',
-            color: 'white', fontSize: 9, fontWeight: 700,
-            padding: '3px 7px', borderRadius: 6,
-            display: 'inline-flex', alignItems: 'center', gap: 3,
-          }}>
-            {isService ? <Wrench size={8} /> : <Package size={8} />}
-            {isService ? 'SERVICE' : 'MATERIAL'}
-          </span>
-          {ad.negotiable && (
-            <span style={{ background: '#10b981', color: 'white', fontSize: 9, fontWeight: 700, padding: '3px 7px', borderRadius: 6 }}>NEGO</span>
-          )}
-        </div>
 
         {/* Title — clearly visible */}
         <p style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.3, marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
