@@ -785,6 +785,7 @@ export default function SellPage() {
           imageFile={cropQueue[cropIndex].file}
           onConfirm={onCropConfirm}
           onCancel={onCropCancel}
+          aspectRatio={4/3}
         />
       )}
     </div>
