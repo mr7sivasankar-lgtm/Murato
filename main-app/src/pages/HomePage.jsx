@@ -164,7 +164,7 @@ export default function HomePage() {
     detectLocation();
   }, []);
 
-  useEffect(() => { fetchAds(); }, [activeCategory, displayCity]);
+  useEffect(() => { fetchAds(); }, [activeCategory, displayCity, displayCoords]);
   useEffect(() => { fetchFeatured(); }, []);
   useEffect(() => { fetchBanners(); }, [displayCity]); // re-fetch when GPS city resolves
 
@@ -186,7 +186,7 @@ export default function HomePage() {
       if (displayCoords && displayCoords[0] !== 0 && displayCoords[1] !== 0) {
         params.lng = displayCoords[0];
         params.lat = displayCoords[1];
-        params.radius = 30; // 30km radius covers nearby villages with the same pincode
+        params.radius = 15; // 15km radius covers nearby villages with the same pincode
       } else if (displayCity && displayCity !== 'Set Location') {
         params.city = displayCity;
       }
