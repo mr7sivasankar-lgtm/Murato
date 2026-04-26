@@ -138,6 +138,11 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
           )}
         </div>
 
+        {/* Title — clearly visible */}
+        <p style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.3, marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {ad.title}
+        </p>
+
         {/* FIX 2: All categories in bold chips — wrap if multiple */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 5 }}>
           {allCategories.map((cat, i) => (
@@ -161,22 +166,11 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
           ))}
         </div>
 
-        {/* Title — clearly visible */}
-        <p style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.3, marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {ad.title}
-        </p>
-
         {/* Brand */}
-        {ad.brand && <p style={{ fontSize: 11, color: '#6b7280', marginBottom: 4 }}>Brand: <strong style={{ color: '#1a2b5f' }}>{ad.brand}</strong></p>}
-
-        {/* Price */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
-          <span style={{ fontSize: 17, fontWeight: 900, color: '#1a2b5f' }}>₹{Number(ad.price).toLocaleString('en-IN')}</span>
-          {priceLabel && <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 600 }}>{priceLabel}</span>}
-        </div>
+        {ad.brand && <p style={{ fontSize: 11, color: '#6b7280', marginBottom: 5 }}>Brand: <strong style={{ color: '#1a2b5f' }}>{ad.brand}</strong></p>}
 
         {/* Location + date + distance */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
             {ad.location?.city && (
               <span style={{ fontSize: 11, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -196,6 +190,12 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
           <span style={{ fontSize: 10, color: '#9ca3af' }}>
             {new Date(ad.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
           </span>
+        </div>
+
+        {/* Price */}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>
+          <span style={{ fontSize: 17, fontWeight: 900, color: '#1a2b5f' }}>₹{Number(ad.price).toLocaleString('en-IN')}</span>
+          {priceLabel && <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 600 }}>{priceLabel}</span>}
         </div>
 
         {/* Seller row — tap to view seller profile */}
