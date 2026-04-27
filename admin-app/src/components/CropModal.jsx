@@ -28,10 +28,15 @@ export default function CropModal({ imageSrc, onConfirm, onCancel, aspectRatio =
     // In % space: cropH% corresponds to (cropH/100)*contH pixels
     // We want (cropW/100)*contW / ((cropH/100)*contH) === aspectRatio
     // → cropH = cropW * contW / (contH * aspectRatio)
-    const cropW = 100;
-    const cropH = clamp((cropW * contW) / (contH * aspectRatio), MIN, 100);
+    let cropW = 85;
+    let cropH = (cropW * contW) / (contH * aspectRatio);
+    if (cropH > 85) {
+      cropH = 85;
+      cropW = (cropH * contH * aspectRatio) / contW;
+    }
+    const cropX = (100 - cropW) / 2;
     const cropY = (100 - cropH) / 2;
-    setCrop({ x: 0, y: cropY, w: cropW, h: cropH });
+    setCrop({ x: cropX, y: cropY, w: cropW, h: cropH });
   }, [aspectRatio]);
 
   const getXY = (e) => {
@@ -131,7 +136,7 @@ export default function CropModal({ imageSrc, onConfirm, onCancel, aspectRatio =
   const ratioLabel = aspectRatio
     ? (() => {
         // Express ratio as nice fraction label e.g. 9:4, 16:5
-        const pairs = [[9,4],[16,5],[16,7],[4,3],[3,2],[16,9],[1,1]];
+        const pairs = [[9,4],[16,5],[16,7],[4,3],[3,2],[16,9],[1,1],[27,14]];
         const best = pairs.reduce((prev, [w,h]) => {
           const diff = Math.abs(aspectRatio - w/h);
           return diff < prev.diff ? { w, h, diff } : prev;
@@ -163,7 +168,7 @@ export default function CropModal({ imageSrc, onConfirm, onCancel, aspectRatio =
         {aspectRatio && (
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
             <span style={{ background: '#2563eb', color: 'white', fontSize: 12, fontWeight: 700, padding: '4px 14px', borderRadius: 20 }}>
-              🔒 Locked ratio: {ratioLabel} &nbsp;|&nbsp; Recommended: 1080 × 480 px
+              🔒 Locked ratio: {ratioLabel} &nbsp;|&nbsp; Recommended: 1080 × 560 px
             </span>
           </div>
         )}
