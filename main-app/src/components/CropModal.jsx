@@ -27,10 +27,15 @@ export default function CropModal({ imageSrc, imageFile, onConfirm, onCancel, as
     // In % space: cropH% corresponds to (cropH/100)*contH pixels
     // We want (cropW/100)*contW / ((cropH/100)*contH) === aspectRatio
     // → cropH = cropW * contW / (contH * aspectRatio)
-    const cropW = 100;
-    const cropH = clamp((cropW * contW) / (contH * aspectRatio), MIN, 100);
+    let cropW = 85;
+    let cropH = (cropW * contW) / (contH * aspectRatio);
+    if (cropH > 85) {
+      cropH = 85;
+      cropW = (cropH * contH * aspectRatio) / contW;
+    }
+    const cropX = (100 - cropW) / 2;
     const cropY = (100 - cropH) / 2;
-    setCrop({ x: 0, y: cropY, w: cropW, h: cropH });
+    setCrop({ x: cropX, y: cropY, w: cropW, h: cropH });
   }, [aspectRatio]);
 
   const getXY = (e) => {

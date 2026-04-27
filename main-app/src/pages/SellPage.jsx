@@ -123,7 +123,9 @@ export default function SellPage() {
   const editAd = location.state?.ad || null;
 
   const [adType,    setAdType]    = useState(editAd?.type || '');
-  const [images,    setImages]    = useState([]);
+  const [images,    setImages]    = useState(
+    editAd?.images?.map(url => ({ preview: url, isExisting: true })) || []
+  );
   const [submitting,setSubmitting] = useState(false);
   const [showLocPicker, setShowLocPicker] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
@@ -310,7 +312,16 @@ export default function SellPage() {
       if (adType === 'service' && sForm.categories.length)
         fd.set('category', sForm.categories[0]);
 
-      images.forEach(item => fd.append('images', item.file));
+      const existingImages = [];
+      images.forEach(item => {
+        if (item.file) fd.append('images', item.file);
+        else if (item.isExisting) existingImages.push(item.preview);
+      });
+
+      if (editAd) {
+        fd.append('replaceImages', 'true');
+        fd.append('existingImages', JSON.stringify(existingImages));
+      }
 
       if (editAd) {
         await api.put(`/ads/${editAd._id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });

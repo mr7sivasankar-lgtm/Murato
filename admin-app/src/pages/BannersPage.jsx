@@ -164,13 +164,19 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
             💡 <em>Canva: Custom size → <strong>1080 × 560 px</strong>. The crop tool below will auto-lock to 27:14 so your banner always fits perfectly.</em>
           </div>
           <input type="file" accept="image/*" onChange={handleImage} style={{ display: 'none' }} id="banner-img" />
-          <label htmlFor="banner-img" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 150, border: '2px dashed var(--border)', borderRadius: 12, cursor: 'pointer', background: '#f9fafb', overflow: 'hidden' }}>
-            {imagePreview
-              ? <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <><Image size={28} color="var(--text-secondary)" style={{ marginBottom: 8 }} /><span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Click to select image</span></>
-            }
+          <label htmlFor="banner-img" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 150, border: '2px dashed var(--border)', borderRadius: 12, cursor: 'pointer', background: '#f9fafb', overflow: 'hidden', position: 'relative' }}>
+            {imagePreview ? (
+              <>
+                <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.6)', padding: '6px 12px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.3)', pointerEvents: 'none' }}>
+                  <span style={{ color: 'white', fontWeight: 600, fontSize: 11 }}>🔄 Change Image</span>
+                </div>
+              </>
+            ) : (
+              <><Image size={28} color="var(--text-secondary)" style={{ marginBottom: 8 }} /><span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Click to select image</span></>
+            )}
           </label>
-          {isEdit && <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>Leave empty to keep the existing image.</p>}
+          {isEdit && <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>Uploading a new image will overwrite this banner's current image.</p>}
         </div>
 
         {/* Target cities */}

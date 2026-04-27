@@ -245,14 +245,25 @@ router.put('/:id', protect, upload.array('images', 5), async (req, res) => {
       };
     }
 
-    if (req.files?.length) {
+    let updatedImages = ad.images;
+    if (req.body.replaceImages === 'true') {
+      const existingImages = req.body.existingImages ? JSON.parse(req.body.existingImages) : [];
+      const newUrls = [];
+      if (req.files?.length) {
+        for (const file of req.files) {
+          const r = await uploadToCloudinary(file.buffer, 'murato/ads');
+          newUrls.push(r.secure_url);
+        }
+      }
+      updatedImages = [...existingImages, ...newUrls];
+      ad.images = updatedImages;
+    } else if (req.files?.length) {
       const newUrls = [];
       for (const file of req.files) {
         const r = await uploadToCloudinary(file.buffer, 'murato/ads');
         newUrls.push(r.secure_url);
       }
-      // replace or append
-      ad.images = req.body.replaceImages === 'true' ? newUrls : [...ad.images, ...newUrls];
+      ad.images = [...ad.images, ...newUrls];
     }
 
     await ad.save();
