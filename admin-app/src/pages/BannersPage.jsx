@@ -159,9 +159,9 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
           <label className="form-label">Banner Image {!isEdit && '*'}</label>
           {/* Spec hint box */}
           <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '10px 14px', marginBottom: 10, fontSize: 12, color: '#0369a1', lineHeight: 1.7 }}>
-            📐 <strong>Exact banner size:</strong> <strong style={{ fontSize: 13 }}>1080 × 472 px</strong> &nbsp;|&nbsp; Ratio: <strong>16:7</strong><br />
+            📐 <strong>Exact banner size:</strong> <strong style={{ fontSize: 13 }}>1080 × 560 px</strong> &nbsp;|&nbsp; Ratio: <strong>27:14</strong><br />
             📁 <strong>Max file size:</strong> 5 MB &nbsp;|&nbsp; Format: JPG, PNG, WebP<br />
-            💡 <em>Canva: Custom size → <strong>1080 × 472 px</strong>. The crop tool below will auto-lock to 16:7 so your banner always fits perfectly.</em>
+            💡 <em>Canva: Custom size → <strong>1080 × 560 px</strong>. The crop tool below will auto-lock to 27:14 so your banner always fits perfectly.</em>
           </div>
           <input type="file" accept="image/*" onChange={handleImage} style={{ display: 'none' }} id="banner-img" />
           <label htmlFor="banner-img" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 150, border: '2px dashed var(--border)', borderRadius: 12, cursor: 'pointer', background: '#f9fafb', overflow: 'hidden' }}>
@@ -240,7 +240,7 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
 
               {/* Banner preview */}
               <div style={{ padding: '6px 8px 4px', background: '#f0f2f9' }}>
-                <div style={{ borderRadius: 10, overflow: 'hidden', height: 76, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+                <div style={{ borderRadius: 10, overflow: 'hidden', aspectRatio: '27/14', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
                   <img
                     src={imagePreview}
                     alt="Banner preview"
@@ -278,7 +278,7 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
     {cropSrc && (
       <CropModal
         imageSrc={cropSrc}
-        aspectRatio={16 / 7}  // locks banner crop to 16:7 ratio
+        aspectRatio={27 / 14}  // locks banner crop to 27:14 ratio
         onConfirm={onCropConfirm}
         onCancel={onCropCancel}
       />

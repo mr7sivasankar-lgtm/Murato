@@ -63,7 +63,7 @@ function BannerCarousel({ banners, navigate }) {
               }}
               style={{
                 flex: '0 0 100%', minWidth: '100%',
-                height: 185,          // ← banner height (~16:7 ratio)
+                aspectRatio: '27/14', // matches exact 1080x560 crop ratio
                 cursor: (banner.externalUrl || banner.targetUserId) ? 'pointer' : 'default',
                 overflow: 'hidden', background: '#fff', userSelect: 'none',
               }}
