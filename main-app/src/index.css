@@ -231,7 +231,7 @@ a { text-decoration: none; color: inherit; }
   cursor: pointer;
   flex: 0 0 auto;
   width: 90px;
-  background: var(--white);
+  background: #f3f4f6;
   border-radius: 16px;
   padding: 8px 6px;
   box-shadow: 0 2px 10px rgba(26,43,95,0.06);
