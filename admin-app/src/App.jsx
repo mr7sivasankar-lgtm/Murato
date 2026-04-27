@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
-import { LayoutDashboard, Users, FileText, Store, Tag, LifeBuoy, LogOut, Image } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Store, Tag, LifeBuoy, LogOut, Image, Settings } from 'lucide-react';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -10,6 +10,7 @@ import AdsPage from './pages/AdsPage';
 import CategoriesPage from './pages/CategoriesPage';
 import SupportPage from './pages/SupportPage';
 import BannersPage from './pages/BannersPage';
+import SettingsPage from './pages/SettingsPage';
 
 const NAV = [
   { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
@@ -18,6 +19,7 @@ const NAV = [
   { key: 'categories', label: 'Categories', icon: <Tag size={18} /> },
   { key: 'banners', label: 'Banners', icon: <Image size={18} /> },
   { key: 'support',    label: 'Support',    icon: <LifeBuoy size={18} /> },
+  { key: 'settings',   label: 'Settings',   icon: <Settings size={18} /> },
 ];
 
 const PAGES = {
@@ -27,6 +29,7 @@ const PAGES = {
   categories: <CategoriesPage />,
   banners: <BannersPage />,
   support:    <SupportPage />,
+  settings:   <SettingsPage />,
 };
 
 export default function App() {

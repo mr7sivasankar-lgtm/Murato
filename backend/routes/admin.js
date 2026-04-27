@@ -320,4 +320,57 @@ router.delete('/banners/:id', adminProtect, async (req, res) => {
   }
 });
 
+// ===================== SETTINGS =====================
+
+// @PUT /api/admin/credentials
+router.put('/credentials', adminProtect, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Both email and password are required' });
+    }
+
+    const fs = require('fs');
+    const path = require('path');
+    const envPath = path.join(__dirname, '..', '.env');
+
+    if (!fs.existsSync(envPath)) {
+      return res.status(500).json({ message: '.env file not found' });
+    }
+
+    let envContent = fs.readFileSync(envPath, 'utf8');
+
+    // Replace or add ADMIN_EMAIL
+    if (envContent.includes('ADMIN_EMAIL=')) {
+      envContent = envContent.replace(/^ADMIN_EMAIL=.*$/m, `ADMIN_EMAIL=${email}`);
+    } else {
+      envContent += `\nADMIN_EMAIL=${email}`;
+    }
+
+    // Replace or add ADMIN_PASSWORD
+    if (envContent.includes('ADMIN_PASSWORD=')) {
+      envContent = envContent.replace(/^ADMIN_PASSWORD=.*$/m, `ADMIN_PASSWORD=${password}`);
+    } else {
+      envContent += `\nADMIN_PASSWORD=${password}`;
+    }
+
+    fs.writeFileSync(envPath, envContent);
+
+    // Update the runtime environment variables so a restart isn't strictly necessary
+    process.env.ADMIN_EMAIL = email;
+    process.env.ADMIN_PASSWORD = password;
+
+    // We should also update the admin user in the database so that their email is kept in sync
+    await User.findOneAndUpdate(
+      { email: (process.env.ADMIN_EMAIL || '').toLowerCase() },
+      { email: email.toLowerCase() },
+      { new: true }
+    );
+
+    res.json({ message: 'Admin credentials updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

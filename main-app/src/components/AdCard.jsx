@@ -136,10 +136,15 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
       {/* ── Body ──────────────────────────────────────── */}
       <div style={{ padding: '10px 10px 8px' }}>
 
-        {/* Title — clearly visible */}
-        <p style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.3, marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {ad.title}
-        </p>
+        {/* Title + Date row — date floats to the right of title */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6, marginBottom: 4 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1 }}>
+            {ad.title}
+          </p>
+          <span style={{ fontSize: 10, color: '#9ca3af', whiteSpace: 'nowrap', flexShrink: 0, marginTop: 2 }}>
+            {new Date(ad.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+          </span>
+        </div>
 
         {/* FIX 2: All categories in bold chips — wrap if multiple */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 5 }}>
@@ -167,9 +172,8 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
         {/* Brand */}
         {ad.brand && <p style={{ fontSize: 11, color: '#6b7280', marginBottom: 5 }}>Brand: <strong style={{ color: '#1a2b5f' }}>{ad.brand}</strong></p>}
 
-        {/* Location + date + distance */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+        {/* Location + distance (date removed — it's shown next to title now) */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 5, marginBottom: 5, flexWrap: 'wrap' }}>
             {ad.location?.city && (
               <span style={{ fontSize: 11, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 3 }}>
                 <MapPin size={10} /> {ad.location.city}{ad.location.area ? `, ${ad.location.area}` : ''}
@@ -185,10 +189,6 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
               </span>
             ))}
           </div>
-          <span style={{ fontSize: 10, color: '#9ca3af' }}>
-            {new Date(ad.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-          </span>
-        </div>
 
         {/* Price */}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>

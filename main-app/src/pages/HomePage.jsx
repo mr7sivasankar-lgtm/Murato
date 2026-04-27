@@ -63,7 +63,7 @@ function BannerCarousel({ banners, navigate }) {
               }}
               style={{
                 flex: '0 0 100%', minWidth: '100%',
-                height: 160,          // ← exact banner height (1200×375 → 16:5 ratio at mobile width)
+                height: 172,          // ← banner height (~9:4 ratio, ~7.5% taller)
                 cursor: (banner.externalUrl || banner.targetUserId) ? 'pointer' : 'default',
                 overflow: 'hidden', background: '#fff', userSelect: 'none',
               }}
