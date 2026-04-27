@@ -40,7 +40,7 @@ function BannerCarousel({ banners, navigate }) {
     // FIX 3: outer wrapper has NO overflow:hidden so dots below are visible
     <div>
       {/* Slide track — overflow:hidden only around the images */}
-      <div style={{ overflow: 'hidden', borderRadius: 20 }}>
+      <div style={{ overflow: 'hidden', borderRadius: 20, boxShadow: '0 4px 20px rgba(26,43,95,0.13)' }}>
         <div
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
@@ -63,7 +63,7 @@ function BannerCarousel({ banners, navigate }) {
               }}
               style={{
                 flex: '0 0 100%', minWidth: '100%',
-                height: 172,          // ← banner height (~9:4 ratio, ~7.5% taller)
+                height: 185,          // ← banner height (~16:7 ratio)
                 cursor: (banner.externalUrl || banner.targetUserId) ? 'pointer' : 'default',
                 overflow: 'hidden', background: '#fff', userSelect: 'none',
               }}
@@ -277,7 +277,7 @@ export default function HomePage() {
 
       {/* ── Admin Banners Carousel ── */}
       {banners.length > 0 && (
-        <div style={{ margin: '12px 16px', borderRadius: 20, boxShadow: '0 4px 20px rgba(26,43,95,0.13)' }}>
+        <div style={{ margin: '12px 16px' }}>
           <BannerCarousel banners={banners} navigate={navigate} />
         </div>
       )}

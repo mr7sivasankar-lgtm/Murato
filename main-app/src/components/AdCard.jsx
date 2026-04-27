@@ -180,8 +180,8 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
               </span>
             )}
             {km !== null ? (
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#7c3aed', background: '#f3f0ff', padding: '1px 6px', borderRadius: 5, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Navigation size={8} /> {km < 1 ? '<1' : Math.round(km)} km
+              <span style={{ fontSize: 10, fontWeight: 800, color: '#1a2b5f', background: '#f5c518', padding: '2px 7px', borderRadius: 5, display: 'flex', alignItems: 'center', gap: 3, boxShadow: '0 2px 6px rgba(245,197,24,0.3)' }}>
+                <Navigation size={9} /> {km < 1 ? '<1' : Math.round(km)} km
               </span>
             ) : (!isService && (
               <span style={{ fontSize: 9, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 2 }}>

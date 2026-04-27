@@ -21,7 +21,6 @@ export default function BottomNav() {
       </NavLink>
       <NavLink to="/sell" className="nav-sell">
         <div className="fab-sell"><Plus size={26} /></div>
-        <span className="fab-label">{t('sell')}</span>
       </NavLink>
       <NavLink to="/my-ads" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
         <ClipboardList size={22} />
