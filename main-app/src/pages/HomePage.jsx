@@ -222,7 +222,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="page page-enter">
+    <div className="page page-enter" style={{ background: '#ffffff' }}>
 
       {/* ===== HEADER ===== */}
       <div className="page-header">
