@@ -126,7 +126,7 @@ export default function CropModal({ imageSrc, imageFile, onConfirm, onCancel, as
 
   const ratioLabel = aspectRatio
     ? (() => {
-        const pairs = [[4,3],[3,2],[16,9],[1,1],[16,5]];
+        const pairs = [[4,3],[3,2],[16,9],[1,1],[16,5],[27,14]];
         const best = pairs.reduce((prev, [w,h]) => {
           const diff = Math.abs(aspectRatio - w/h);
           return diff < prev.diff ? { w, h, diff } : prev;
