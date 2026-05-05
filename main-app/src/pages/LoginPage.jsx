@@ -209,7 +209,7 @@ export default function LoginPage() {
       await api.put('/auth/profile', { city: city.trim(), area: area.trim() });
     } catch { /* non-critical */ }
     finally { setLoading(false); }
-    toast.success('Welcome to Murato! 🏗️');
+    toast.success('Welcome to Myillo! 🏗️');
     navigate('/');
   };
 
@@ -231,7 +231,7 @@ export default function LoginPage() {
 
   /* ── STEP: phone ── */
   if (step === 'phone') return (
-    <Wrapper icon="🏗️" title="Welcome to Murato" subtitle="Your construction marketplace">
+    <Wrapper icon="🏗️" title="Welcome to Myillo" subtitle="Your construction marketplace">
       <p style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>Mobile Number</p>
       <div style={{ display: 'flex', alignItems: 'center', border: '2px solid #e5e7eb', borderRadius: 14, overflow: 'hidden', marginBottom: 20 }}>
         <div style={{ background: '#f0f3fc', padding: '14px', borderRight: '1.5px solid #e5e7eb', fontSize: 15, fontWeight: 700, color: '#1a2b5f' }}>🇮🇳 +91</div>

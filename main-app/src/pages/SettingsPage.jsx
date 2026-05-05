@@ -246,7 +246,7 @@ export default function SettingsPage() {
         <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', marginBottom: 24, boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', gap: 12 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Info size={18} color="#d97706" /></div>
-            <div><p style={{ fontSize: 14, fontWeight: 600 }}>App Version</p><p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Murato v2.0.0 · Build 2026</p></div>
+            <div><p style={{ fontSize: 14, fontWeight: 600 }}>App Version</p><p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Myillo v2.0.0 · Build 2026</p></div>
           </div>
         </div>
 

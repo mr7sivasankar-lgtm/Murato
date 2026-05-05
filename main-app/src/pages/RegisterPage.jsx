@@ -14,7 +14,7 @@ export default function RegisterPage() {
     if (form.password !== form.confirm) return toast.error("Passwords don't match");
     const result = await register(form.name, form.phone, form.password, form.email);
     if (result.success) {
-      toast.success('Account created! Welcome to Murato 🏗️');
+      toast.success('Account created! Welcome to Myillo 🏗️');
       navigate('/');
     } else {
       toast.error(result.message);
@@ -25,7 +25,7 @@ export default function RegisterPage() {
     <div className="auth-page">
       <div className="auth-hero" style={{ flex: '0 0 auto', paddingTop: 60, paddingBottom: 30 }}>
         <div className="auth-logo">🏗️</div>
-        <h1 className="auth-brand">Murato</h1>
+        <h1 className="auth-brand">Myillo</h1>
         <p className="auth-tagline">Join the construction marketplace</p>
       </div>
 

@@ -246,7 +246,7 @@ export default function HomePage() {
           </button>
 
           {/* Center: Brand */}
-          <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)', letterSpacing: '-0.5px' }}>Murato</span>
+          <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)', letterSpacing: '-0.5px' }}>Myillo</span>
 
           {/* Right: greeting */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
