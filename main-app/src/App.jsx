@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import BottomNav from './components/BottomNav';
-import { useEffect, useRef } from 'react';
+import SplashScreen from './components/SplashScreen';
+import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { initPush, clearPushListeners } from './services/PushNotificationService';
 
@@ -114,6 +115,8 @@ function AppRoutes() {
 }
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
   return (
     <AuthProvider>
       <BrowserRouter>
@@ -124,6 +127,7 @@ export default function App() {
             duration: 3000,
           }}
         />
+        {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
         <AppRoutes />
       </BrowserRouter>
     </AuthProvider>
