@@ -53,14 +53,14 @@ function PinInput({ value, onChange, onComplete, error }) {
           const borderColor = error
             ? '#ef4444'
             : isActive
-            ? '#2563eb'
+            ? '#e87e04'
             : isFilled
             ? '#1a2b5f'
             : '#e5e7eb';
           const bgColor = error
             ? '#fef2f2'
             : isActive
-            ? '#eff6ff'
+            ? '#fff8f0'
             : isFilled
             ? '#f0f3fc'
             : 'white';
@@ -82,7 +82,7 @@ function PinInput({ value, onChange, onComplete, error }) {
                 color: '#1a2b5f',
                 transition: 'all 0.15s',
                 animation: error ? 'pin-shake 0.4s ease' : 'none',
-                boxShadow: isActive ? '0 0 0 3px rgba(37,99,235,0.18)' : 'none',
+                boxShadow: isActive ? '0 0 0 3px rgba(232,126,4,0.18)' : 'none',
                 position: 'relative',
                 overflow: 'hidden',
               }}
@@ -93,7 +93,7 @@ function PinInput({ value, onChange, onComplete, error }) {
                   display: 'inline-block',
                   width: 2,
                   height: 28,
-                  background: '#2563eb',
+                  background: '#e87e04',
                   borderRadius: 2,
                   animation: 'pin-cursor 1s step-end infinite',
                 }} />
@@ -215,15 +215,38 @@ export default function LoginPage() {
 
   /* ── Shared hero wrapper ── */
   const Wrapper = ({ icon, title, subtitle, children }) => (
-    <div style={{ minHeight: '100dvh', background: 'linear-gradient(160deg,#0f1d45 0%,#1a2b5f 55%,#243680 100%)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px 24px' }}>
-        <div style={{ width: 80, height: 80, borderRadius: 24, background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, border: '1.5px solid rgba(255,255,255,0.2)', fontSize: 40 }}>
-          {icon}
+    <div style={{ minHeight: '100dvh', background: 'linear-gradient(180deg, #ffffff 0%, #fff8f0 55%, #fde8c8 100%)', display: 'flex', flexDirection: 'column' }}>
+      {/* Hero */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px 28px', position: 'relative', overflow: 'hidden' }}>
+        {/* Myillo M+House Logo */}
+        <div style={{ width: 100, height: 100, marginBottom: 18 }}>
+          <svg viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="lgw" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#ffb347" />
+                <stop offset="100%" stopColor="#e87e04" />
+              </linearGradient>
+            </defs>
+            <path d="M10 110 L10 30 L70 75 L130 30 L130 110" stroke="url(#lgw)" strokeWidth="22" strokeLinecap="square" strokeLinejoin="miter" fill="none" />
+            <polygon points="70,60 105,88 35,88" fill="#1a2b5f" />
+            <rect x="44" y="88" width="52" height="36" fill="#1a2b5f" rx="2" />
+            <rect x="59" y="96" width="8" height="8" fill="#f5c518" rx="1" />
+            <rect x="73" y="96" width="8" height="8" fill="#f5c518" rx="1" />
+            <rect x="59" y="108" width="8" height="8" fill="#f5c518" rx="1" />
+            <rect x="73" y="108" width="8" height="8" fill="#f5c518" rx="1" />
+          </svg>
         </div>
-        <h1 style={{ fontSize: 26, fontWeight: 900, color: 'white', textAlign: 'center', marginBottom: 8 }}>{title}</h1>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>{subtitle}</p>
+        <h1 style={{ fontSize: 26, fontWeight: 900, color: '#1a2b5f', textAlign: 'center', marginBottom: 8, letterSpacing: -0.5 }}>{title}</h1>
+        <p style={{ fontSize: 14, color: '#6b7280', textAlign: 'center' }}>{subtitle}</p>
+        {/* Decorative wave bottom */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+          <svg viewBox="0 0 430 40" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 40 }}>
+            <path d="M0,20 Q107,0 215,16 Q323,32 430,12 L430,40 L0,40 Z" fill="rgba(232,126,4,0.08)" />
+          </svg>
+        </div>
       </div>
-      <div style={{ background: 'white', borderRadius: '28px 28px 0 0', padding: '28px 24px 48px', boxShadow: '0 -8px 40px rgba(0,0,0,0.2)' }}>
+      {/* Input card */}
+      <div style={{ background: 'white', borderRadius: '28px 28px 0 0', padding: '28px 24px 48px', boxShadow: '0 -8px 40px rgba(0,0,0,0.08)' }}>
         {children}
       </div>
     </div>
@@ -290,7 +313,7 @@ export default function LoginPage() {
           Forgot PIN?
         </button>
         <button onClick={() => { localStorage.removeItem('murato_phone'); setPhone(''); setStep('phone'); setPinError(''); }}
-          style={{ fontSize: 14, color: '#2563eb', fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', marginTop: 8 }}>
+          style={{ fontSize: 14, color: '#e87e04', fontWeight: 700, textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', marginTop: 8 }}>
           Use a different number
         </button>
       </div>
