@@ -239,7 +239,9 @@ router.post('/banners', adminProtect, upload.single('image'), async (req, res) =
     if (targetUser && targetUser.trim() && !user)
       return res.status(404).json({ message: 'Target user not found. Check the phone number.' });
 
-    const result = await uploadToCloudinary(req.file.buffer, 'murato/banners');
+    const isGif = req.file.mimetype === 'image/gif';
+    const cloudinaryOpts = isGif ? { format: 'gif', flags: 'animated' } : {};
+    const result = await uploadToCloudinary(req.file.buffer, 'murato/banners', cloudinaryOpts);
 
     const banner = await Banner.create({
       imageUrl:     result.secure_url,
@@ -266,7 +268,9 @@ router.put('/banners/:id', adminProtect, upload.single('image'), async (req, res
 
     // Update image if a new one was uploaded
     if (req.file) {
-      const result = await uploadToCloudinary(req.file.buffer, 'murato/banners');
+      const isGif = req.file.mimetype === 'image/gif';
+      const cloudinaryOpts = isGif ? { format: 'gif', flags: 'animated' } : {};
+      const result = await uploadToCloudinary(req.file.buffer, 'murato/banners', cloudinaryOpts);
       banner.imageUrl = result.secure_url;
     }
 

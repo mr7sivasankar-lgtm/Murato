@@ -12,7 +12,7 @@ cloudinary.config({
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB per file (mobile photos are large)
+  limits: { fileSize: 30 * 1024 * 1024 }, // 30MB — allows animated GIF banners
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -24,11 +24,14 @@ const upload = multer({
 
 /**
  * Upload a buffer to Cloudinary
+ * @param {Buffer} buffer
+ * @param {string} folder
+ * @param {object} extraOptions  — extra Cloudinary upload options (e.g. { format:'gif', flags:'animated' })
  */
-const uploadToCloudinary = (buffer, folder = 'murato') => {
+const uploadToCloudinary = (buffer, folder = 'murato', extraOptions = {}) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder, resource_type: 'image' },
+      { folder, resource_type: 'image', ...extraOptions },
       (error, result) => {
         if (error) return reject(error);
         resolve(result);

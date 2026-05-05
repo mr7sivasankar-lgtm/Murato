@@ -115,10 +115,20 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
   const handleImage = (e) => {
     const f = e.target.files[0];
     if (!f) return;
-    if (f.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB'); return; }
-    // Open crop modal first
+    const isGif = f.type === 'image/gif';
+    const maxSize = isGif ? 15 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (f.size > maxSize) {
+      toast.error(isGif ? 'GIF must be under 15 MB' : 'Image must be under 5 MB');
+      return;
+    }
+    // GIFs: skip crop modal — canvas crop destroys animation
+    if (isGif) {
+      setImageFile(f);
+      setImgPrev(URL.createObjectURL(f));
+      return;
+    }
+    // Static images: open crop modal
     setCropSrc(URL.createObjectURL(f));
-    // Temporarily store file for name reference
     setImageFile(f);
   };
 
@@ -160,8 +170,8 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
           {/* Spec hint box */}
           <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 10, padding: '10px 14px', marginBottom: 10, fontSize: 12, color: '#0369a1', lineHeight: 1.7 }}>
             📐 <strong>Exact banner size:</strong> <strong style={{ fontSize: 13 }}>1080 × 560 px</strong> &nbsp;|&nbsp; Ratio: <strong>27:14</strong><br />
-            📁 <strong>Max file size:</strong> 5 MB &nbsp;|&nbsp; Format: JPG, PNG, WebP<br />
-            💡 <em>Canva: Custom size → <strong>1080 × 560 px</strong>. The crop tool below will auto-lock to 27:14 so your banner always fits perfectly.</em>
+            📁 <strong>Max file size:</strong> 5 MB (15 MB for GIF) &nbsp;|&nbsp; Format: JPG, PNG, WebP, <strong>GIF ✨</strong><br />
+            💡 <em>For animated GIFs — upload directly, crop step is skipped to preserve animation.</em>
           </div>
           <input type="file" accept="image/*" onChange={handleImage} style={{ display: 'none' }} id="banner-img" />
           <label htmlFor="banner-img" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 150, border: '2px dashed var(--border)', borderRadius: 12, cursor: 'pointer', background: '#f9fafb', overflow: 'hidden', position: 'relative' }}>
