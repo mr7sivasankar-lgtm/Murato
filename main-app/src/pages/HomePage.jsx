@@ -125,36 +125,54 @@ export default function HomePage() {
       try {
         let lat, lng;
 
-        // Try Capacitor Geolocation first (proper Android permission dialog)
+        // Try Capacitor Geolocation first (Android native — DO NOT call requestPermissions separately,
+        // it crashes on Android. getCurrentPosition() triggers the permission dialog automatically.)
         try {
           const { Geolocation } = await import('@capacitor/geolocation');
-          await Geolocation.requestPermissions();
-          const pos = await Geolocation.getCurrentPosition({ timeout: 8000, enableHighAccuracy: false });
+          const pos = await Geolocation.getCurrentPosition({
+            timeout: 10000,
+            enableHighAccuracy: false,
+          });
           lat = pos.coords.latitude;
           lng = pos.coords.longitude;
           setDisplayCoords([lng, lat]);
         } catch {
-          // Fallback to browser geolocation (web)
-          if (!navigator.geolocation) {
+          // Fallback: browser navigator.geolocation (web / iOS WebView)
+          if (navigator.geolocation) {
+            try {
+              const pos = await new Promise((resolve, reject) =>
+                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 6000 })
+              );
+              lat = pos.coords.latitude;
+              lng = pos.coords.longitude;
+              setDisplayCoords([lng, lat]);
+            } catch {
+              // Both failed — use stored profile city
+              setDisplayCity(user?.location?.city || 'Set Location');
+              setLocLoading(false);
+              return;
+            }
+          } else {
             setDisplayCity(user?.location?.city || 'Set Location');
             setLocLoading(false);
             return;
           }
-          const pos = await new Promise((resolve, reject) =>
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 })
-          );
-          lat = pos.coords.latitude;
-          lng = pos.coords.longitude;
-          setDisplayCoords([lng, lat]);
         }
 
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`
-        );
-        const d = await res.json();
-        const a = d.address || {};
-        const city = a.city || a.town || a.village || a.county || user?.location?.city || '';
-        setDisplayCity(city);
+        // Reverse geocode to city name
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`,
+            { signal: AbortSignal.timeout(5000) }
+          );
+          const d = await res.json();
+          const a = d.address || {};
+          const city = a.city || a.town || a.village || a.county || user?.location?.city || '';
+          setDisplayCity(city);
+        } catch {
+          // Reverse geocode failed — coords still set, city falls back to profile
+          setDisplayCity(user?.location?.city || 'Set Location');
+        }
       } catch {
         setDisplayCity(user?.location?.city || 'Set Location');
       } finally {
