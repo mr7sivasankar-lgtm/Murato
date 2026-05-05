@@ -95,7 +95,7 @@ export default function ProfilePage() {
 
       {/* ── Hero ── */}
       <div style={{
-        background: 'linear-gradient(160deg, #0f1d45 0%, #1a2b5f 50%, #243680 100%)',
+        background: 'linear-gradient(160deg, #e87e04 0%, #f5a623 55%, #ffb347 100%)',
         padding: '52px 20px 24px',
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>

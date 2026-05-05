@@ -361,7 +361,7 @@ export default function SellPage() {
   // ── Type selection screen ─────────────────────────────────────────────────
   if (!adType) {
     return (
-      <div className="page page-enter" style={{ minHeight: '100dvh', background: 'linear-gradient(160deg,#0f1d45,#1a2b5f)' }}>
+      <div className="page page-enter" style={{ minHeight: '100dvh', background: 'linear-gradient(160deg, #e87e04 0%, #f5a623 60%, #ffb347 100%)' }}>
         <div style={{ padding: '52px 24px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <button onClick={() => navigate(-1)} style={{ color: 'white', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', display: 'flex' }}>
             <ArrowLeft size={20} />
@@ -398,7 +398,7 @@ export default function SellPage() {
   return (
     <div className="page page-enter" style={{ paddingBottom: 100, background: 'var(--bg)' }}>
       {/* Header */}
-      <div style={{ background: 'var(--navy)', padding: '52px 20px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ background: 'linear-gradient(135deg, #e87e04 0%, #f5a623 100%)', padding: '52px 20px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <button onClick={() => adType ? setAdType('') : navigate(-1)} style={{ color: 'white', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', display: 'flex' }}>
           <ArrowLeft size={20} />
         </button>
@@ -677,7 +677,7 @@ export default function SellPage() {
               <Navigation size={13} /> {detecting ? 'Detecting...' : 'GPS'}
             </button>
             <button type="button" onClick={() => setShowLocPicker(true)}
-              style={{ flex: 1, minWidth: 90, padding: '10px 8px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'white', color: '#7c3aed', fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}
+              style={{ flex: 1, minWidth: 90, padding: '10px 8px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'white', color: '#e87e04', fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}
             >
               <Search size={13} /> Search
             </button>
