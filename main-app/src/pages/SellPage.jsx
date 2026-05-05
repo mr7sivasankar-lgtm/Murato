@@ -134,6 +134,8 @@ export default function SellPage() {
   const [cropQueue,  setCropQueue]  = useState([]);
   const [cropIndex,  setCropIndex]  = useState(0);
 
+  const LANGUAGE_OPTIONS = ['Telugu', 'Hindi', 'English', 'Tamil', 'Kannada', 'Urdu', 'Marathi'];
+
   // ── Product form ──────────────────────────────────────────────────────────
   const [pForm, setPForm] = useState({
     title:            editAd?.title || '',
@@ -162,6 +164,7 @@ export default function SellPage() {
     whatsappAvailable:editAd?.whatsappAvailable !== undefined ? editAd.whatsappAvailable : (user?.whatsappAvailable || false),
     contactMode:      editAd?.contactMode || user?.contactMode || 'chat',
     description:      editAd?.description || '',
+    languages:        editAd?.languages || [],
   });
 
   // ── Service form ──────────────────────────────────────────────────────────
@@ -190,6 +193,7 @@ export default function SellPage() {
     whatsappAvailable:editAd?.whatsappAvailable !== undefined ? editAd.whatsappAvailable : (user?.whatsappAvailable || false),
     contactMode:      editAd?.contactMode || user?.contactMode || 'chat',
     description:      editAd?.description || '',
+    languages:        editAd?.languages || [],
   });
 
   const pSet = (k, v) => setPForm(f => ({ ...f, [k]: v }));
@@ -711,6 +715,38 @@ export default function SellPage() {
           <div className="form-group">
             <label className="form-label">Business / Shop Name</label>
             <input className="form-input" placeholder="Your business or your name" value={form.businessName} onChange={e => fSet('businessName', e.target.value)} />
+          </div>
+
+          {/* Languages */}
+          <div className="form-group">
+            <label className="form-label">🗣️ Languages You Speak</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {LANGUAGE_OPTIONS.map(lang => {
+                const sel = (form.languages || []).includes(lang);
+                return (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => {
+                      const next = sel
+                        ? form.languages.filter(l => l !== lang)
+                        : [...(form.languages || []), lang];
+                      fSet('languages', next);
+                    }}
+                    style={{
+                      padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
+                      border: `1.5px solid ${sel ? 'var(--navy)' : 'var(--border)'}`,
+                      background: sel ? '#f0f3fc' : 'white',
+                      color: sel ? 'var(--navy)' : 'var(--text-secondary)',
+                    }}
+                  >
+                    {sel && <Check size={11} />} {lang}
+                  </button>
+                );
+              })}
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>Helps buyers contact you in their preferred language</p>
           </div>
 
           {/* Contact options — independent checkboxes */}

@@ -46,6 +46,7 @@ const adSchema = new mongoose.Schema(
     teamSize:        { type: Number, default: 1 },
     projectsDone:    { type: Number, default: 0 },
     skills:          [{ type: String }],
+    languages:       [{ type: String }], // spoken languages seller communicates in
     pricingType:     { type: String, enum: ['per_day', 'per_hour', 'per_sqft', 'per_project', 'fixed', ''], default: '' },
     serviceRadius:   { type: Number, default: 20 }, // km
     availability:    { type: String, enum: ['available', 'busy', 'from_date', ''], default: 'available' },
