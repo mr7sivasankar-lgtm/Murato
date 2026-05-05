@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Heart, MapPin, Star, Package, Wrench, ChevronRight, Navigation } from 'lucide-react';
 import { PRICE_TYPE_LABELS } from '../data/categories';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import api from '../api/axios';
 
 const CAT_ICONS = {
@@ -38,6 +39,7 @@ const StarRow = ({ avg = 0, count = 0, size = 11 }) => (
 export default function AdCard({ ad, onFavToggle, compact = false }) {
   const navigate = useNavigate();
   const { user }  = useAuth();
+  const { t } = useLanguage();
   const [faved, setFaved] = useState(ad.isFavorited || false);
 
   const seller     = ad.userId || {};
@@ -106,21 +108,20 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
             boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
           }}>
             {isService ? <Wrench size={8} /> : <Package size={8} />}
-            {isService ? 'SERVICE' : 'MATERIAL'}
+            {isService ? t('service') : t('material')}
           </span>
           {ad.negotiable && (
             <span style={{ background: '#10b981', color: 'white', fontSize: 9, fontWeight: 700, padding: '3px 7px', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
-              NEGO
+              {t('nego')}
             </span>
           )}
         </div>
       </div>
 
-      {/* ── Featured badge (top-left) — only FEATURED stays on image ── */}
       {ad.isFeatured && (
         <div style={{ position: 'absolute', top: 8, left: 8 }}>
           <span style={{ background: '#f5c518', color: '#1a2b5f', fontSize: 9, fontWeight: 800, padding: '3px 7px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 3 }}>
-            <Star size={8} fill="#1a2b5f" color="#1a2b5f" /> FEATURED
+            <Star size={8} fill="#1a2b5f" color="#1a2b5f" /> {t('featured')}
           </span>
         </div>
       )}
@@ -170,10 +171,10 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
         </div>
 
         {/* Brand */}
-        {ad.brand && <p style={{ fontSize: 11, color: '#6b7280', marginBottom: 5 }}>Brand: <strong style={{ color: '#1a2b5f' }}>{ad.brand}</strong></p>}
+        {ad.brand && <p style={{ fontSize: 11, color: '#6b7280', marginBottom: 5 }}>{t('brand')}: <strong style={{ color: '#1a2b5f' }}>{ad.brand}</strong></p>}
 
         {/* Location + distance (date removed — it's shown next to title now) */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 5, marginBottom: ad.languages?.length ? 4 : 5, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 5, marginBottom: 5, flexWrap: 'wrap' }}>
             {ad.location?.city && (
               <span style={{ fontSize: 11, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 3 }}>
                 <MapPin size={10} /> {ad.location.city}{ad.location.area ? `, ${ad.location.area}` : ''}
@@ -185,21 +186,12 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
               </span>
             ) : (!isService && (
               <span style={{ fontSize: 9, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Navigation size={8} /> No GPS
+                <Navigation size={8} /> {t('noGps')}
               </span>
             ))}
           </div>
 
-        {/* Languages spoken */}
-        {ad.languages?.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 5 }}>
-            {ad.languages.map((lang, i) => (
-              <span key={i} style={{ fontSize: 10, fontWeight: 600, color: '#6d28d9', background: '#ede9fe', padding: '2px 7px', borderRadius: 20 }}>
-                {i === 0 ? '🗣️ ' : ''}{lang}
-              </span>
-            ))}
-          </div>
-        )}
+
 
         {/* Price */}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>

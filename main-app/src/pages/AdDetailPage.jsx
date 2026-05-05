@@ -206,16 +206,6 @@ export default function AdDetailPage() {
                 ))}
               </div>
             )}
-            {ad.languages?.length > 0 && (
-              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginBottom: 6 }}>🗣️ Languages Spoken</p>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {ad.languages.map(lang => (
-                    <span key={lang} style={{ fontSize: 12, fontWeight: 600, color: '#6d28d9', background: '#ede9fe', padding: '4px 12px', borderRadius: 20 }}>{lang}</span>
-                  ))}
-                </div>
-              </div>
-            )}
             <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               {ad.travelAvailable && <span style={{ fontSize: 12, color: '#10b981', fontWeight: 600 }}>✈️ Travel Ready</span>}
               {ad.materialIncluded && <span style={{ fontSize: 12, color: '#10b981', fontWeight: 600 }}>📦 Material Included</span>}

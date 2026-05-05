@@ -55,6 +55,8 @@ const T = {
     pickupAvail: 'Store / Site Pickup Available', subcategoriesLabel: 'Subcategories (select all that apply)',
     workTypesLabel: 'Work Types (select all you can do)', specificTypesLabel: 'Specific Types / Grades',
     specificDetailsLabel: 'Specific Details / Machines',
+    brand: 'Brand', noGps: 'No GPS', material: 'MATERIAL', service: 'SERVICE',
+    nego: 'NEGO', featured: 'FEATURED',
   },
 
   te: {
@@ -107,6 +109,8 @@ const T = {
     pickupAvail: 'స్టోర్ / సైట్ పికప్ అందుబాటులో ఉంది', subcategoriesLabel: 'ఉపవర్గాలు',
     workTypesLabel: 'పని రకాలు (మీరు చేయగలవన్నీ ఎంచుకోండి)', specificTypesLabel: 'నిర్దిష్ట రకాలు / గ్రేడ్‌లు',
     specificDetailsLabel: 'నిర్దిష్ట వివరాలు / యంత్రాలు',
+    brand: 'బ్రాండ్', noGps: 'GPS లేదు', material: 'మెటీరియల్', service: 'సేవ',
+    nego: 'చర్చించదగిన', featured: 'విశేష',
   },
 
   ta: {
@@ -159,6 +163,8 @@ const T = {
     pickupAvail: 'கடை / தளம் பிக்அப் கிடைக்கும்', subcategoriesLabel: 'துணைப்பிரிவுகள்',
     workTypesLabel: 'வேலை வகைகள் (உங்களால் முடிந்த அனைத்தையும் தேர்ந்தெடுக்கவும்)', specificTypesLabel: 'குறிப்பிட்ட வகைகள் / தரங்கள்',
     specificDetailsLabel: 'குறிப்பிட்ட விவரங்கள் / இயந்திரங்கள்',
+    brand: 'பிராண்ட்', noGps: 'GPS இல்லை', material: 'பொருள்', service: 'சேவை',
+    nego: 'பேசலாம்', featured: 'சிறப்பு',
   },
 };
 
