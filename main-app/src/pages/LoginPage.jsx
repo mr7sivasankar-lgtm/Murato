@@ -117,11 +117,12 @@ export default function LoginPage() {
   const { user, loginDirect } = useAuth();
   useEffect(() => { if (user) navigate('/'); }, [user]);
 
-  // Detect returning user from localStorage
+  // Pre-fill phone if previously used (for convenience) but always start at phone step
+  // so we validate with the server — handles deleted accounts / cleared test data
   const storedPhone = localStorage.getItem('murato_phone') || '';
 
-  const [step, setStep]       = useState(storedPhone ? 'pin' : 'phone');
-  const [phone, setPhone]     = useState(storedPhone);
+  const [step, setStep]       = useState('phone');  // always start at phone
+  const [phone, setPhone]     = useState(storedPhone.replace('+91', '')); // pre-fill digits only
   const [name, setName]       = useState('');
   const [pin, setPin]         = useState('');
   const [forgotPhone, setForgotPhone] = useState('');
