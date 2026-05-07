@@ -122,7 +122,14 @@ export default function ChatRoomPage() {
                   <div style={{ marginTop: 4, fontWeight: 700 }}>💰 Offer: ₹{Number(msg.offerAmount).toLocaleString('en-IN')}</div>
                 )}
               </div>
-              <span className="msg-time">{new Date(msg.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span className="msg-time">{new Date(msg.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                {isMe && (
+                  <span style={{ fontSize: 12, fontWeight: 700, color: msg.isRead ? '#2196F3' : '#9ca3af', letterSpacing: -1 }}>
+                    {msg.isRead ? '✓✓' : '✓'}
+                  </span>
+                )}
+              </div>
             </div>
           );
         })}

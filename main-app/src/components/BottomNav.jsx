@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Home, MessageCircle, Plus, ClipboardList, User } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
 
 export default function BottomNav() {
@@ -10,33 +10,39 @@ export default function BottomNav() {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const intervalRef = useRef(null);
 
   const hide = ['/login', '/register', '/chat/'].some(p => location.pathname.startsWith(p));
   const isChatRoom = location.pathname.match(/^\/chat\/.+/);
   if (hide && isChatRoom) return null;
 
-  // Fetch total unread message count across all chats
+  // Fetch total unread count immediately + every 15 seconds
   useEffect(() => {
-    if (!user) return;
+    if (!user?._id) return;
+
     const fetchUnread = async () => {
       try {
         const { data } = await api.get('/chat/mine');
+        const userId = user._id.toString();
         const total = data.reduce((sum, chat) => {
-          const count = chat.unreadCount?.[user._id] || 0;
-          return sum + count;
+          // Handle both plain object and Map serialization
+          const count = (chat.unreadCount?.[userId]) || 0;
+          return sum + Number(count);
         }, 0);
         setUnreadCount(total);
       } catch { /* silent */ }
     };
-    fetchUnread();
-    // Re-check every 30 seconds
-    const interval = setInterval(fetchUnread, 30000);
-    return () => clearInterval(interval);
-  }, [user]);
 
-  // Reset badge when entering chats page
+    fetchUnread(); // immediate on mount
+    intervalRef.current = setInterval(fetchUnread, 15000);
+    return () => clearInterval(intervalRef.current);
+  }, [user?._id]);
+
+  // Reset badge when entering the chats page
   useEffect(() => {
-    if (location.pathname === '/chats') setUnreadCount(0);
+    if (location.pathname === '/chats') {
+      setUnreadCount(0);
+    }
   }, [location.pathname]);
 
   return (
@@ -51,22 +57,12 @@ export default function BottomNav() {
           <MessageCircle size={22} />
           {unreadCount > 0 && (
             <span style={{
-              position: 'absolute',
-              top: -5,
-              right: -7,
-              background: '#ef4444',
-              color: 'white',
-              fontSize: 10,
-              fontWeight: 800,
-              minWidth: 16,
-              height: 16,
-              borderRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 3px',
-              border: '2px solid white',
-              lineHeight: 1,
+              position: 'absolute', top: -5, right: -8,
+              background: '#ef4444', color: 'white',
+              fontSize: 9, fontWeight: 800,
+              minWidth: 15, height: 15, borderRadius: 8,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '0 3px', border: '1.5px solid white', lineHeight: 1,
             }}>
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>

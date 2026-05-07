@@ -115,7 +115,6 @@ export default function HomePage() {
 
   // Location: prefer GPS-detected, fallback to user profile
   const [displayCity, setDisplayCity] = useState(() => {
-    // Load from cache immediately so it shows instantly on every visit
     try {
       const cached = JSON.parse(localStorage.getItem('myillo_location') || 'null');
       if (cached && Date.now() - cached.ts < 10 * 60 * 1000) return cached.city;
@@ -129,7 +128,14 @@ export default function HomePage() {
     } catch {}
     return user?.location?.coordinates || null;
   });
-  const [locLoading, setLocLoading] = useState(false);
+  // Start loading=true if no cached city — shows spinner instantly instead of 'Set Location'
+  const [locLoading, setLocLoading] = useState(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem('myillo_location') || 'null');
+      if (cached && Date.now() - cached.ts < 10 * 60 * 1000) return false;
+    } catch {}
+    return !user?.location?.city; // loading if no stored city
+  });
 
   // Auto-detect GPS on mount — use Capacitor Geolocation on Android for proper permission prompt
   useEffect(() => {
@@ -191,7 +197,8 @@ export default function HomePage() {
             );
             const d = await res.json();
             const a = d.address || {};
-            const city = a.city || a.town || a.village || a.county || user?.location?.city || '';
+            // Prefer city/county over village for broader location names (e.g. Tirupati not Karanam Mittoor)
+            const city = a.city || a.town || a.county || a.state_district || a.village || user?.location?.city || '';
             setDisplayCity(city);
             // Save to cache
             localStorage.setItem('myillo_location', JSON.stringify({ city, coords: [lng, lat], ts: Date.now() }));
@@ -254,14 +261,18 @@ export default function HomePage() {
 
   const handleLocationSelect = ({ city, area, lat, lng }) => {
     setDisplayCity(city);
-    if (lat && lng) setDisplayCoords([parseFloat(lng), parseFloat(lat)]);
+    const coords = (lat && lng) ? [parseFloat(lng), parseFloat(lat)] : null;
+    if (coords) setDisplayCoords(coords);
+    // Save manual selection to cache (1 hour TTL)
+    localStorage.setItem('myillo_location', JSON.stringify({
+      city, coords, ts: Date.now() - (9 * 60 * 1000), // 1 min remaining before refresh
+    }));
     if (updateUser) {
       updateUser({ 
         location: { 
           ...user?.location, 
-          city, 
-          area, 
-          coordinates: (lat && lng) ? [parseFloat(lng), parseFloat(lat)] : user?.location?.coordinates 
+          city, area,
+          coordinates: coords || user?.location?.coordinates,
         } 
       });
     }
