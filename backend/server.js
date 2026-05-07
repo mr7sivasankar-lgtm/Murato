@@ -24,6 +24,9 @@ const server = http.createServer(app);
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
+  'https://myillo.vercel.app',
+  'https://myillo-admin.vercel.app',
+  // Keep old URLs during transition
   'https://murato.vercel.app',
   'https://murato-admin.vercel.app',
   // Capacitor Android & iOS apps send these origins
@@ -31,6 +34,7 @@ const allowedOrigins = [
   'https://localhost',
   'http://localhost',
   // Allow all Vercel preview domains dynamically
+  /^https:\/\/myillo.*\.vercel\.app$/,
   /^https:\/\/murato.*\.vercel\.app$/
 ];
 
@@ -87,7 +91,7 @@ app.use('/api/banners',    bannersRoutes);
 
 // Health check
 app.get('/', (_req, res) => {
-  res.json({ message: '🏗️ Murato API is running!', status: 'ok' });
+  res.json({ message: '🏗️ Myillo API is running!', status: 'ok' });
 });
 
 // Socket.io events
@@ -122,7 +126,7 @@ mongoose
     console.log('✅ MongoDB connected');
     const PORT = process.env.PORT || 5000;
     server.listen(PORT, () => {
-      console.log(`🚀 Murato server running on http://localhost:${PORT}`);
+      console.log(`🚀 Myillo server running on http://localhost:${PORT}`);
     });
   })
   .catch((err) => {

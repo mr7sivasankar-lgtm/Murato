@@ -159,16 +159,22 @@ export default function HomePage() {
           }
         }
 
-        // Reverse geocode to city name
+        // Reverse geocode to city name (use AbortController for WebView compatibility)
         try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`,
-            { signal: AbortSignal.timeout(5000) }
-          );
-          const d = await res.json();
-          const a = d.address || {};
-          const city = a.city || a.town || a.village || a.county || user?.location?.city || '';
-          setDisplayCity(city);
+          const controller = new AbortController();
+          const geocodeTimeout = setTimeout(() => controller.abort(), 5000);
+          try {
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`,
+              { signal: controller.signal }
+            );
+            const d = await res.json();
+            const a = d.address || {};
+            const city = a.city || a.town || a.village || a.county || user?.location?.city || '';
+            setDisplayCity(city);
+          } finally {
+            clearTimeout(geocodeTimeout);
+          }
         } catch {
           // Reverse geocode failed — coords still set, city falls back to profile
           setDisplayCity(user?.location?.city || 'Set Location');

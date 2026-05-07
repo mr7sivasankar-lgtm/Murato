@@ -2,7 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Chat = require('../models/Chat');
 const Message = require('../models/Message');
+const User = require('../models/User');
 const { protect } = require('../middleware/auth');
+const { sendPush } = require('../utils/sendPush');
 
 // @POST /api/chat/start — Start or get existing chat
 router.post('/start', protect, async (req, res) => {
@@ -115,6 +117,30 @@ router.post('/:chatId/messages', protect, async (req, res) => {
     // Emit via socket
     if (req.io) {
       req.io.to(req.params.chatId).emit('receive_message', populated);
+    }
+
+    // Send push notification to the OTHER participant
+    try {
+      const recipientId = chat.participants.find(
+        (p) => p.toString() !== req.user._id.toString()
+      );
+      if (recipientId) {
+        const recipient = await User.findById(recipientId).select('fcmToken name');
+        if (recipient?.fcmToken) {
+          const senderName = req.user.name || 'Someone';
+          const msgPreview = type === 'offer'
+            ? `💰 Offer: ₹${offerAmount}`
+            : text?.slice(0, 60) || '📷 Image';
+          await sendPush(
+            recipient.fcmToken,
+            `${senderName} sent a message`,
+            msgPreview,
+            { type: 'chat', chatId: req.params.chatId }
+          );
+        }
+      }
+    } catch (pushErr) {
+      console.warn('[Push] Non-critical error:', pushErr.message);
     }
 
     res.status(201).json(populated);
