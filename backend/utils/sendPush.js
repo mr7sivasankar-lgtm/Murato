@@ -1,10 +1,36 @@
 /**
  * sendPush.js
- * Sends FCM push notifications using the legacy HTTP API.
- * Requires FCM_SERVER_KEY in .env
+ * Sends FCM push notifications using the Firebase Admin SDK (V1 API).
+ * Requires firebase-service-account.json.json in the backend root.
  */
 
-const https = require('https');
+let admin = null;
+
+function getAdmin() {
+  if (admin) return admin;
+  try {
+    admin = require('firebase-admin');
+    
+    // On Render: read from environment variable
+    // In dev: read from local file
+    let serviceAccount;
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    } else {
+      serviceAccount = require('../firebase-service-account.json.json');
+    }
+
+    if (!admin.apps.length) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+    }
+  } catch (err) {
+    console.warn('[Push] Firebase Admin SDK not initialized:', err.message);
+    admin = null;
+  }
+  return admin;
+}
 
 /**
  * @param {string} token   - Device FCM token
@@ -13,62 +39,38 @@ const https = require('https');
  * @param {object} data    - Optional data payload (for navigation on tap)
  */
 async function sendPush(token, title, body, data = {}) {
-  const serverKey = process.env.FCM_SERVER_KEY;
-
-  if (!serverKey || serverKey === 'paste_your_server_key_here') {
-    console.warn('[Push] FCM_SERVER_KEY not set — skipping push notification');
-    return;
-  }
-
   if (!token) {
     console.warn('[Push] No FCM token — skipping');
     return;
   }
 
-  const payload = JSON.stringify({
-    to: token,
-    notification: {
-      title,
-      body,
-      sound: 'default',
-    },
-    data,
-    priority: 'high',
-    android: {
-      priority: 'high',
-    },
-  });
+  const firebaseAdmin = getAdmin();
+  if (!firebaseAdmin) {
+    console.warn('[Push] Firebase Admin not available — skipping push');
+    return;
+  }
 
-  return new Promise((resolve) => {
-    const req = https.request(
-      {
-        hostname: 'fcm.googleapis.com',
-        path: '/fcm/send',
-        method: 'POST',
-        headers: {
-          Authorization: `key=${serverKey}`,
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(payload),
-        },
+  // FCM data values must all be strings
+  const stringData = {};
+  for (const [k, v] of Object.entries(data)) {
+    stringData[k] = String(v);
+  }
+
+  try {
+    await firebaseAdmin.messaging().send({
+      token,
+      notification: { title, body },
+      data: stringData,
+      android: {
+        priority: 'high',
+        notification: { sound: 'default', channelId: 'default' },
       },
-      (res) => {
-        let raw = '';
-        res.on('data', (chunk) => (raw += chunk));
-        res.on('end', () => {
-          console.log('[Push] FCM response:', raw.slice(0, 100));
-          resolve();
-        });
-      }
-    );
-
-    req.on('error', (err) => {
-      console.warn('[Push] FCM request error:', err.message);
-      resolve(); // never throw — push is non-critical
     });
-
-    req.write(payload);
-    req.end();
-  });
+    console.log('[Push] ✅ Sent to', token.slice(0, 20) + '...');
+  } catch (err) {
+    console.warn('[Push] ❌ FCM error:', err.message);
+    // Non-critical — never throw
+  }
 }
 
 module.exports = { sendPush };
