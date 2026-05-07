@@ -65,8 +65,16 @@ router.get('/', async (req, res) => {
     if (q) {
       const Fuse = require('fuse.js');
       const fuse = new Fuse(ads, {
-        keys: ['title', 'category', 'subcategory', 'brand', 'description'],
-        threshold: 0.4, // Allows typos like 'sement' -> 'Cement'
+        keys: [
+          { name: 'title',                    weight: 3 },
+          { name: 'userId.businessName',       weight: 2.5 },
+          { name: 'userId.name',               weight: 2 },
+          { name: 'category',                  weight: 1.5 },
+          { name: 'subcategory',               weight: 1.5 },
+          { name: 'brand',                     weight: 1 },
+          { name: 'description',               weight: 0.8 },
+        ],
+        threshold: 0.4,
         ignoreLocation: true,
       });
       ads = fuse.search(q).map(result => result.item);

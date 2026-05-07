@@ -154,9 +154,20 @@ export default function HomePage() {
       try {
         let lat, lng;
 
-        // Try Capacitor Geolocation first (Android native)
+        // Try Capacitor Geolocation (Android native)
         try {
           const { Geolocation } = await import('@capacitor/geolocation');
+
+          // Explicitly request permission first — this triggers the system dialog automatically
+          // without the user needing to tap "Set Location"
+          const perm = await Geolocation.requestPermissions();
+          if (perm.location === 'denied') {
+            // Permission denied — fall back to user profile city
+            setDisplayCity(user?.location?.city || 'Set Location');
+            setLocLoading(false);
+            return;
+          }
+
           const pos = await Geolocation.getCurrentPosition({
             timeout: 10000,
             enableHighAccuracy: false,
