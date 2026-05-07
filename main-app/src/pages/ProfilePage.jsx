@@ -95,8 +95,8 @@ export default function ProfilePage() {
 
       {/* ── Hero ── */}
       <div style={{
-        background: 'linear-gradient(160deg, #e87e04 0%, #f5a623 55%, #ffb347 100%)',
-        padding: '52px 20px 24px',
+        background: 'linear-gradient(135deg, #FFF8C0 0%, #FFE566 45%, #FFD700 75%, #FFF5B0 100%)',
+        padding: '36px 20px 20px',
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
           {/* Avatar */}
@@ -110,24 +110,24 @@ export default function ProfilePage() {
             {(user?.name || '?')[0].toUpperCase()}
           </div>
           <div style={{ flex: 1 }}>
-            <h2 style={{ fontSize: 20, fontWeight: 900, color: 'white', lineHeight: 1.1, marginBottom: 2 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 900, color: 'var(--navy)', lineHeight: 1.1, marginBottom: 2 }}>
               {user?.businessName || user?.name}
             </h2>
             {user?.businessName && (
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>{user.name}</p>
+              <p style={{ fontSize: 13, color: 'rgba(26,43,95,0.6)', marginBottom: 4 }}>{user.name}</p>
             )}
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 4 }}>
+            <p style={{ fontSize: 13, color: 'rgba(26,43,95,0.55)', marginBottom: 4 }}>
               📱 {user?.phone}
             </p>
             {user?.location?.city && (
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <p style={{ fontSize: 12, color: 'rgba(26,43,95,0.5)', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <MapPin size={11} /> {user.location.city}{user.location.area ? `, ${user.location.area}` : ''}
               </p>
             )}
           </div>
           <button
             onClick={() => navigate('/settings')}
-            style={{ color: 'rgba(255,255,255,0.7)', background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', display: 'flex' }}
+            style={{ color: 'var(--navy)', background: 'rgba(26,43,95,0.08)', border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', display: 'flex' }}
           >
             <Edit3 size={18} />
           </button>
@@ -140,20 +140,20 @@ export default function ProfilePage() {
             { label: t('rating'), value: user?.ratingAvg > 0 ? `⭐ ${user.ratingAvg.toFixed(1)}` : '—' },
             { label: t('reviews'), value: user?.ratingCount || 0 },
           ].map(s => (
-            <div key={s.label} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px', textAlign: 'center' }}>
-              <p style={{ fontSize: 18, fontWeight: 900, color: 'white' }}>{s.value}</p>
-              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{s.label}</p>
+            <div key={s.label} style={{ background: 'rgba(26,43,95,0.07)', borderRadius: 12, padding: '10px', textAlign: 'center' }}>
+              <p style={{ fontSize: 18, fontWeight: 900, color: 'var(--navy)' }}>{s.value}</p>
+              <p style={{ fontSize: 10, color: 'rgba(26,43,95,0.55)', marginTop: 2 }}>{s.label}</p>
             </div>
           ))}
         </div>
 
         {/* Contact mode pill */}
         <div style={{ marginTop: 14 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.85)', padding: '5px 12px', borderRadius: 20, display: 'inline-block' }}>
+          <span style={{ fontSize: 11, fontWeight: 600, background: 'rgba(26,43,95,0.1)', color: 'var(--navy)', padding: '5px 12px', borderRadius: 20, display: 'inline-block' }}>
             {contactModeLabel}
           </span>
           {user?.whatsappAvailable && (
-            <span style={{ fontSize: 11, fontWeight: 600, background: 'rgba(37,211,102,0.2)', color: '#25d366', padding: '5px 12px', borderRadius: 20, display: 'inline-block', marginLeft: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, background: 'rgba(37,211,102,0.2)', color: '#1a8a44', padding: '5px 12px', borderRadius: 20, display: 'inline-block', marginLeft: 6 }}>
               {t('whatsapp')}
             </span>
           )}

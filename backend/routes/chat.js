@@ -80,11 +80,16 @@ router.get('/:chatId/messages', protect, async (req, res) => {
       .populate('senderId', 'name avatar')
       .sort({ createdAt: 1 });
 
-    // Mark messages as read
+    // Mark messages as read + reset unread count for this user
     await Message.updateMany(
       { chatId: req.params.chatId, senderId: { $ne: req.user._id }, isRead: false },
       { isRead: true }
     );
+
+    // Reset unread badge for this user
+    await Chat.findByIdAndUpdate(req.params.chatId, {
+      $set: { [`unreadCount.${req.user._id}`]: 0 },
+    });
 
     res.json(messages);
   } catch (error) {
@@ -107,9 +112,16 @@ router.post('/:chatId/messages', protect, async (req, res) => {
       offerAmount: offerAmount || 0,
     });
 
-    // Update chat last message
+    // Update chat last message + increment unread count for recipient
+    const recipientId = chat.participants.find(
+      (p) => p.toString() !== req.user._id.toString()
+    );
     chat.lastMessage = text || (type === 'offer' ? `Offer: ₹${offerAmount}` : '📷 Image');
     chat.lastMessageAt = new Date();
+    if (recipientId) {
+      const currentCount = chat.unreadCount?.get?.(recipientId.toString()) || 0;
+      chat.unreadCount.set(recipientId.toString(), currentCount + 1);
+    }
     await chat.save();
 
     const populated = await message.populate('senderId', 'name avatar');
