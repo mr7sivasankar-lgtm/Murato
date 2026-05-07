@@ -114,19 +114,41 @@ export default function HomePage() {
   const [showLocPicker, setShowLocPicker] = useState(false);
 
   // Location: prefer GPS-detected, fallback to user profile
-  const [displayCity, setDisplayCity] = useState(user?.location?.city || '');
-  const [displayCoords, setDisplayCoords] = useState(user?.location?.coordinates || null);
+  const [displayCity, setDisplayCity] = useState(() => {
+    // Load from cache immediately so it shows instantly on every visit
+    try {
+      const cached = JSON.parse(localStorage.getItem('myillo_location') || 'null');
+      if (cached && Date.now() - cached.ts < 10 * 60 * 1000) return cached.city;
+    } catch {}
+    return user?.location?.city || '';
+  });
+  const [displayCoords, setDisplayCoords] = useState(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem('myillo_location') || 'null');
+      if (cached && Date.now() - cached.ts < 10 * 60 * 1000) return cached.coords;
+    } catch {}
+    return user?.location?.coordinates || null;
+  });
   const [locLoading, setLocLoading] = useState(false);
 
   // Auto-detect GPS on mount — use Capacitor Geolocation on Android for proper permission prompt
   useEffect(() => {
     const detectLocation = async () => {
+      // Skip if we have a recent cache (< 10 min)
+      try {
+        const cached = JSON.parse(localStorage.getItem('myillo_location') || 'null');
+        if (cached && Date.now() - cached.ts < 10 * 60 * 1000) {
+          setDisplayCity(cached.city);
+          if (cached.coords) setDisplayCoords(cached.coords);
+          return; // Use cache — no GPS call
+        }
+      } catch {}
+
       setLocLoading(true);
       try {
         let lat, lng;
 
-        // Try Capacitor Geolocation first (Android native — DO NOT call requestPermissions separately,
-        // it crashes on Android. getCurrentPosition() triggers the permission dialog automatically.)
+        // Try Capacitor Geolocation first (Android native)
         try {
           const { Geolocation } = await import('@capacitor/geolocation');
           const pos = await Geolocation.getCurrentPosition({
@@ -147,7 +169,6 @@ export default function HomePage() {
               lng = pos.coords.longitude;
               setDisplayCoords([lng, lat]);
             } catch {
-              // Both failed — use stored profile city
               setDisplayCity(user?.location?.city || 'Set Location');
               setLocLoading(false);
               return;
@@ -159,7 +180,7 @@ export default function HomePage() {
           }
         }
 
-        // Reverse geocode to city name (use AbortController for WebView compatibility)
+        // Reverse geocode to city name
         try {
           const controller = new AbortController();
           const geocodeTimeout = setTimeout(() => controller.abort(), 5000);
@@ -172,11 +193,12 @@ export default function HomePage() {
             const a = d.address || {};
             const city = a.city || a.town || a.village || a.county || user?.location?.city || '';
             setDisplayCity(city);
+            // Save to cache
+            localStorage.setItem('myillo_location', JSON.stringify({ city, coords: [lng, lat], ts: Date.now() }));
           } finally {
             clearTimeout(geocodeTimeout);
           }
         } catch {
-          // Reverse geocode failed — coords still set, city falls back to profile
           setDisplayCity(user?.location?.city || 'Set Location');
         }
       } catch {
