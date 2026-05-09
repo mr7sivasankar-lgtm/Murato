@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ChevronRight, Heart, ClipboardList, MessageCircle,
-  Settings, LogOut, Star, MapPin, Phone, MessageSquare, Edit3, LifeBuoy, X, Lock, Globe,
+  Settings, LogOut, Star, MapPin, Phone, MessageSquare, Edit3, LifeBuoy, X, Lock, Globe, Shield
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -204,6 +204,7 @@ export default function ProfilePage() {
 
       <div style={{ background: 'white', marginBottom: 12, boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
         <MenuItem icon={<Settings size={18} />} label={t('settings')} sub={t('editProfilePref')} onClick={() => navigate('/settings')} color="#6b7280" />
+        <MenuItem icon={<Shield size={18} />} label="Privacy Policy" sub="Read our privacy policy" onClick={() => navigate('/privacy-policy')} color="#3b82f6" />
         <MenuItem icon={<Lock size={18} />} label={t('changePin')} sub={t('updatePin')} onClick={() => setShowChangePin(true)} color="#8b5cf6" />
         <MenuItem
           icon={<LifeBuoy size={18} />}
