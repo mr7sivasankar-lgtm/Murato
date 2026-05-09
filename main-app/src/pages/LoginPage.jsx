@@ -268,7 +268,7 @@ export default function LoginPage() {
       <button onClick={handlePhoneNext} className="btn btn-primary" disabled={loading} style={{ borderRadius: 50, fontWeight: 800, fontSize: 16 }}>
         {loading ? 'Checking...' : 'Continue →'}
       </button>
-      <p style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', marginTop: 16 }}>By continuing, you agree to our Terms & <span onClick={() => navigate('/privacy-policy')} style={{ color: '#1a2b5f', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}>Privacy Policy</span></p>
+      <p style={{ textAlign: 'center', fontSize: 12, color: '#9ca3af', marginTop: 16 }}>By continuing, you agree to our <span onClick={() => navigate('/terms')} style={{ color: '#1a2b5f', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}>Terms</span> & <span onClick={() => navigate('/privacy-policy')} style={{ color: '#1a2b5f', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}>Privacy Policy</span></p>
     </Wrapper>
   );
 

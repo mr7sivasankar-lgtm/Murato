@@ -75,6 +75,7 @@ import ProfilePage        from './pages/ProfilePage';
 import SettingsPage       from './pages/SettingsPage';
 import SellerProfilePage  from './pages/SellerProfilePage';
 import PrivacyPolicyPage  from './pages/PrivacyPolicyPage';
+import TermsPage          from './pages/TermsPage';
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
@@ -88,6 +89,7 @@ function AppRoutes() {
     path === '/login' ||
     path === '/register' ||
     path === '/privacy-policy' ||
+    path === '/terms' ||
     path.startsWith('/ads/')   ||   // AdDetailPage has its own fixed CTA bar
     path.startsWith('/seller/') ||  // SellerProfilePage is full-screen
     (path.startsWith('/chat/') && path.length > 6);
@@ -110,6 +112,7 @@ function AppRoutes() {
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
       {!isNavHidden && <BottomNav />}
