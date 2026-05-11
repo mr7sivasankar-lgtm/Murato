@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "215118936211",
+    "project_id": "myillo",
+    "storage_bucket": "myillo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:215118936211:android:52b974b1bc3ae7f57df566",
+        "android_client_info": {
+          "package_name": "com.myillo.myillo_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyACktgupP2LqAjHvpMH2sNtkN9qWWBt_Bk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
