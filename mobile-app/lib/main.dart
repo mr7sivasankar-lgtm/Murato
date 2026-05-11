@@ -1,122 +1,165 @@
+// ─── Myillo App — Full Router + Entry Point ───────────────────────────────────
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+import 'config/app_theme.dart';
+import 'providers/auth_provider.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+// Auth
+import 'screens/auth/login_screen.dart';
 
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
+// Phase 2
+import 'screens/home/home_screen.dart';
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+// Phase 3
+import 'screens/ads/ad_detail_screen.dart';
+import 'screens/search/search_screen.dart';
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+// Phase 4
+import 'screens/ads/post_ad_screen.dart';
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+// Phase 5
+import 'screens/profile/profile_screen.dart';
+import 'screens/profile/settings_screen.dart';
+import 'screens/profile/my_ads_screen.dart';
 
+// Phase 6
+import 'screens/chat/chats_screen.dart';
+import 'screens/chat/chat_room_screen.dart';
+
+// Phase 7
+import 'screens/favorites/favorites_screen.dart';
+import 'screens/seller/seller_profile_screen.dart';
+
+// ── Simple static screens ─────────────────────────────────────────────────────
+class _StaticScreen extends StatelessWidget {
   final String title;
-
+  const _StaticScreen({required this.title});
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: AppColors.bg,
+    appBar: AppBar(
+      backgroundColor: AppColors.white, elevation: 0,
+      leading: BackButton(color: AppColors.textPrimary, onPressed: () => context.pop()),
+      title: Text(title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+    ),
+    body: Center(child: Text(title, style: const TextStyle(color: AppColors.textSecondary))),
+  );
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+// ── Router ────────────────────────────────────────────────────────────────────
+GoRouter _buildRouter(AuthProvider auth) => GoRouter(
+  initialLocation: '/login',
+  refreshListenable: auth,
+  redirect: (_, state) {
+    if (!auth.initialized) return null;
+    final loggedIn  = auth.isLoggedIn;
+    final onLogin   = state.matchedLocation == '/login';
+    if (loggedIn && onLogin)  return '/';
+    if (!loggedIn && !onLogin) return '/login';
+    return null;
+  },
+  routes: [
+    // Auth
+    GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+    // Home
+    GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
+
+    // Search
+    GoRoute(path: '/search', builder: (_, __) => const SearchScreen()),
+
+    // Ad detail
+    GoRoute(path: '/ads/:id',
+      builder: (_, state) => AdDetailScreen(adId: state.pathParameters['id']!)),
+
+    // Post Ad (Sell)
+    GoRoute(path: '/sell', builder: (_, __) => const PostAdScreen()),
+
+    // Profile
+    GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
+    GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+    GoRoute(path: '/my-ads', builder: (_, __) => const MyAdsScreen()),
+
+    // Chats
+    GoRoute(path: '/chats', builder: (_, __) => const ChatsScreen()),
+    GoRoute(path: '/chat/:chatId',
+      builder: (_, state) => ChatRoomScreen(chatId: state.pathParameters['chatId']!)),
+
+    // Favorites
+    GoRoute(path: '/favorites', builder: (_, __) => const FavoritesScreen()),
+
+    // Seller
+    GoRoute(path: '/seller/:id',
+      builder: (_, state) => SellerProfileScreen(sellerId: state.pathParameters['id']!)),
+
+    // Static
+    GoRoute(path: '/terms',   builder: (_, __) => const _StaticScreen(title: 'Terms of Service')),
+    GoRoute(path: '/privacy', builder: (_, __) => const _StaticScreen(title: 'Privacy Policy')),
+  ],
+  errorBuilder: (_, state) => Scaffold(
+    body: Center(child: Text('Page not found: ${state.uri}',
+      style: const TextStyle(color: AppColors.textSecondary))),
+  ),
+);
+
+// ── App ───────────────────────────────────────────────────────────────────────
+// Background FCM handler — must be top-level
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    systemNavigationBarColor: Colors.white,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  ));
+  runApp(const MyilloApp());
+}
+
+class MyilloApp extends StatefulWidget {
+  const MyilloApp({super.key});
+  @override
+  State<MyilloApp> createState() => _MyilloAppState();
+}
+
+class _MyilloAppState extends State<MyilloApp> {
+  late final AuthProvider _auth;
+  late final GoRouter     _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _auth   = AuthProvider();
+    _router = _buildRouter(_auth);
+    _auth.initialize();
   }
 
   @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+  Widget build(BuildContext context) => ChangeNotifierProvider.value(
+    value: _auth,
+    child: MaterialApp.router(
+      title: 'Myillo',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
+      routerConfig: _router,
+      builder: (ctx, child) => MediaQuery(
+        data: MediaQuery.of(ctx).copyWith(
+          textScaler: TextScaler.linear(
+            MediaQuery.of(ctx).textScaler.scale(1.0).clamp(0.8, 1.2))),
+        child: child!,
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
-  }
+    ),
+  );
 }

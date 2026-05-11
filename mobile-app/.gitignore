@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ── Sensitive files — DO NOT commit ──────────────────────────────────────────
+android/key.properties          # contains keystore passwords
+android/app/*.jks               # keystore file
+android/app/google-services.json          # Firebase API key
+android/app/google-services\ \(2\).json  # duplicate — also sensitive
