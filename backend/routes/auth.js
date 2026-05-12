@@ -228,4 +228,23 @@ router.put('/fcm-token', protect, async (req, res) => {
   }
 });
 
+// @DELETE /api/auth/account - Delete user account
+router.delete('/account', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    // Optional: Delete user's ads and chats
+    const Ad = require('../models/Ad');
+    await Ad.deleteMany({ seller: user._id });
+
+    // Delete user
+    await User.findByIdAndDelete(req.user._id);
+    
+    res.json({ success: true, message: 'Account deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

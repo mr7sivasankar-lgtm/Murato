@@ -344,9 +344,26 @@ export default function SettingsPage() {
         <button
           onClick={() => { logout(); navigate('/login'); toast.success('Logged out'); }}
           className="btn"
-          style={{ borderRadius: 50, background: '#fee2e2', color: 'var(--danger)', fontWeight: 700 }}
+          style={{ borderRadius: 50, background: '#fee2e2', color: 'var(--danger)', fontWeight: 700, marginBottom: 16 }}
         >
           🚪 Log Out
+        </button>
+
+        {/* Delete Account */}
+        <button
+          onClick={() => {
+            if (window.confirm('Are you sure you want to delete your account? This action cannot be undone and will permanently delete your ads and profile.')) {
+              api.delete('/auth/account')
+                .then(() => {
+                  logout(); navigate('/login'); toast.success('Account deleted successfully');
+                })
+                .catch((err) => toast.error(err?.response?.data?.message || 'Failed to delete account'));
+            }
+          }}
+          className="btn"
+          style={{ borderRadius: 50, background: '#fef2f2', border: '1.5px solid #fecaca', color: '#b91c1c', fontWeight: 700 }}
+        >
+          🗑️ Delete Account
         </button>
       </div>
 
