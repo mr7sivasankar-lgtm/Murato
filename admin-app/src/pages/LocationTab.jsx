@@ -45,8 +45,8 @@ export default function LocationTab() {
     finally { setSaving(false); }
   };
 
-  const activeCount  = locations.filter(l => l.isServiceActive).length;
-  const blockedCount = locations.filter(l => !l.isServiceActive).length;
+  const activeCount  = locations.filter(l => !l.noLocation && l.isServiceActive).length;
+  const blockedCount = locations.filter(l => !l.noLocation && !l.isServiceActive).length;
   const totalUsers   = locations.reduce((s, l) => s + l.userCount, 0);
 
   return (
