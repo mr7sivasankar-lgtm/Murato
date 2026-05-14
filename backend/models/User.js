@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema(
     location: {
       city:        { type: String, default: '' },
       area:        { type: String, default: '' },
+      pincode:     { type: String, default: '' },
       coordinates: { type: [Number], default: [0, 0] }, // [lng, lat]
     },
 

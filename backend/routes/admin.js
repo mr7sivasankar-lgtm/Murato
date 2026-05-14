@@ -108,7 +108,7 @@ router.get('/locations', adminProtect, async (req, res) => {
       { $match: { phone: { $ne: 'admin-internal' }, 'location.city': { $ne: '' } } },
       {
         $group: {
-          _id: '$location.city',
+          _id: { city: '$location.city', pincode: '$location.pincode' },
           userCount:   { $sum: 1 },
           activeCount: { $sum: { $cond: [{ $eq: ['$isBanned', false] }, 1, 0] } },
           bannedCount: { $sum: { $cond: [{ $eq: ['$isBanned', true]  }, 1, 0] } },
@@ -127,16 +127,22 @@ router.get('/locations', adminProtect, async (req, res) => {
     const serviceMap = {};
     services.forEach(s => { serviceMap[s.city] = s; });
 
-    const result = cityGroups.map(g => ({
-      city:            g._id,
-      userCount:       g.userCount,
-      activeCount:     g.activeCount,
-      bannedCount:     g.bannedCount,
-      isServiceActive: serviceMap[g._id]?.isActive ?? true,
-      reason:          serviceMap[g._id]?.reason    || '',
-      toggledAt:       serviceMap[g._id]?.toggledAt || null,
-      noLocation:      false,
-    }));
+    const result = cityGroups.map(g => {
+      const city = g._id.city;
+      const pin = g._id.pincode;
+      const displayLabel = pin ? `${city} - ${pin}` : city;
+      
+      return {
+        city:            displayLabel, // Use combined label as the ID for toggling
+        userCount:       g.userCount,
+        activeCount:     g.activeCount,
+        bannedCount:     g.bannedCount,
+        isServiceActive: serviceMap[displayLabel]?.isActive ?? true,
+        reason:          serviceMap[displayLabel]?.reason    || '',
+        toggledAt:       serviceMap[displayLabel]?.toggledAt || null,
+        noLocation:      false,
+      };
+    });
 
     // Append the "no location" virtual group at the end if any
     if (noLocationCount > 0) {

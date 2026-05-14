@@ -12,6 +12,8 @@ import '../../providers/auth_provider.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/auth_wrapper.dart';
 import '../../widgets/pin_input_widget.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -28,7 +30,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final _nameCtrl    = TextEditingController();
   final _cityCtrl    = TextEditingController();
   final _areaCtrl    = TextEditingController();
+  final _pincodeCtrl = TextEditingController();
   final _forgotCtrl  = TextEditingController();
+
+  double? _lat;
+  double? _lng;
 
   String _pin          = '';
   String _recoveredPin = '';
@@ -57,7 +63,45 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _setLoading(bool v) => setState(() => _loading = v);
-  void _setStep(String s)  => setState(() { _step = s; _pin = ''; _pinError = null; });
+  void _setStep(String s) {
+    setState(() { _step = s; _pin = ''; _pinError = null; });
+    if (s == 'location') _autoDetectLocation();
+  }
+
+  Future<void> _autoDetectLocation() async {
+    _setLoading(true);
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) throw Exception('Location disabled');
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) throw Exception('Permission denied');
+      }
+      if (permission == LocationPermission.deniedForever) throw Exception('Permission denied forever');
+
+      final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+      if (!mounted) return;
+      _lat = pos.latitude;
+      _lng = pos.longitude;
+
+      final placemarks = await placemarkFromCoordinates(pos.latitude, pos.longitude);
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        if (place.locality != null && place.locality!.isNotEmpty) _cityCtrl.text = place.locality!;
+        else if (place.subAdministrativeArea != null && place.subAdministrativeArea!.isNotEmpty) _cityCtrl.text = place.subAdministrativeArea!;
+        
+        if (place.subLocality != null && place.subLocality!.isNotEmpty) _areaCtrl.text = place.subLocality!;
+        if (place.postalCode != null && place.postalCode!.isNotEmpty) _pincodeCtrl.text = place.postalCode!;
+      }
+      _showSnack('Location detected! 📍');
+    } catch (e) {
+      // Silently fail to manual entry if they deny permission
+    } finally {
+      if (mounted) _setLoading(false);
+    }
+  }
 
   // ── STEP: phone ───────────────────────────────────────────────────────────
 
@@ -160,6 +204,9 @@ class _LoginScreenState extends State<LoginScreen> {
       await AuthService.saveLocation(
         city: _cityCtrl.text.trim(),
         area: _areaCtrl.text.trim(),
+        pincode: _pincodeCtrl.text.trim(),
+        lat: _lat,
+        lng: _lng,
       );
     } catch (_) {/* non-critical */}
     finally {
@@ -471,7 +518,24 @@ class _LoginScreenState extends State<LoginScreen> {
           textCapitalization: TextCapitalization.words,
           decoration: const InputDecoration(hintText: 'e.g. Kukatpally'),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 14),
+        Text('Pincode', style: _labelStyle()),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _pincodeCtrl,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
+          decoration: const InputDecoration(hintText: 'e.g. 500072'),
+        ),
+        const SizedBox(height: 16),
+        Center(
+          child: TextButton.icon(
+            onPressed: _loading ? null : _autoDetectLocation,
+            icon: const Icon(Icons.my_location, size: 18, color: AppColors.orange),
+            label: Text('Auto-detect Location', style: GoogleFonts.inter(color: AppColors.orange, fontWeight: FontWeight.w700)),
+          ),
+        ),
+        const SizedBox(height: 16),
         ElevatedButton(
           onPressed: (_loading || _cityCtrl.text.trim().isEmpty) ? null : _handleLocationSave,
           child: _loading

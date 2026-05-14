@@ -129,6 +129,9 @@ export default function LoginPage() {
   const [recoveredPin, setRecoveredPin] = useState('');
   const [city, setCity]       = useState('');
   const [area, setArea]       = useState('');
+  const [pincode, setPincode] = useState('');
+  const [lat, setLat]         = useState(null);
+  const [lng, setLng]         = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPin, setShowPin] = useState(false);
   const [pinError, setPinError] = useState('');
@@ -163,6 +166,7 @@ export default function LoginPage() {
       localStorage.setItem('murato_phone', phone);
       loginDirect({ ...data.user, token: data.token });
       setStep('location');
+      autoDetectLocation();
     } catch (err) {
       toast.error(err?.response?.data?.message || 'Registration failed');
       setPin('');
@@ -202,12 +206,45 @@ export default function LoginPage() {
     } finally { setLoading(false); }
   };
 
+  /* ── Step: Auto-detect Location ── */
+  const autoDetectLocation = async () => {
+    setLoading(true);
+    try {
+      const { Geolocation } = await import('@capacitor/geolocation');
+      await Geolocation.requestPermissions();
+      const pos = await Geolocation.getCurrentPosition({ timeout: 10000 });
+      const currentLat = pos.coords.latitude;
+      const currentLng = pos.coords.longitude;
+      setLat(currentLat);
+      setLng(currentLng);
+
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${currentLat}&lon=${currentLng}&format=json&accept-language=en`);
+      const data = await res.json();
+      const a = data.address || {};
+      
+      const c = a.city || a.town || a.county || a.state_district || a.village || '';
+      if (c) setCity(c);
+      
+      const ar = a.suburb || a.neighbourhood || a.residential || '';
+      if (ar) setArea(ar);
+      
+      const pin = a.postcode || '';
+      if (pin) setPincode(pin);
+
+      toast.success('Location detected! 📍');
+    } catch (e) {
+      // Ignore, user can enter manually
+    } finally {
+      setLoading(false);
+    }
+  };
+
   /* ── Step: save location ── */
   const handleLocationSave = async () => {
     if (!city.trim()) { toast.error('Enter your city'); return; }
     setLoading(true);
     try {
-      await api.put('/auth/profile', { city: city.trim(), area: area.trim() });
+      await api.put('/auth/profile', { city: city.trim(), area: area.trim(), pincode: pincode.trim(), lat, lng });
     } catch { /* non-critical */ }
     finally { setLoading(false); }
     toast.success('Welcome to Myillo! 🏗️');
@@ -372,7 +409,16 @@ export default function LoginPage() {
         onChange={e => setCity(e.target.value)} style={{ marginBottom: 14, borderRadius: 12 }} />
       <p style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>Area / Locality</p>
       <input className="form-input" placeholder="e.g. Kukatpally" value={area}
-        onChange={e => setArea(e.target.value)} style={{ marginBottom: 24, borderRadius: 12 }} />
+        onChange={e => setArea(e.target.value)} style={{ marginBottom: 14, borderRadius: 12 }} />
+      <p style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>Pincode</p>
+      <input className="form-input" placeholder="e.g. 500072" value={pincode}
+        type="tel" maxLength={6}
+        onChange={e => setPincode(e.target.value.replace(/\D/g, ''))} style={{ marginBottom: 16, borderRadius: 12 }} />
+      <div style={{ textAlign: 'center', marginBottom: 16 }}>
+        <button onClick={autoDetectLocation} disabled={loading} style={{ background: 'none', border: 'none', color: '#e87e04', fontWeight: 700, fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+          <MapPin size={16} /> Auto-detect Location
+        </button>
+      </div>
       <button onClick={handleLocationSave} className="btn btn-primary" disabled={loading || !city.trim()}
         style={{ borderRadius: 50, fontWeight: 800, fontSize: 16, opacity: !city.trim() ? 0.5 : 1 }}>
         {loading ? 'Saving...' : '✅ Done, Let\'s Go!'}
