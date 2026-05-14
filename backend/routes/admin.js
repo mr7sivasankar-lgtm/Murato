@@ -6,6 +6,8 @@ const Ad = require('../models/Ad');
 const Shop = require('../models/Shop');
 const Chat = require('../models/Chat');
 const Banner = require('../models/Banner');
+const LocationService = require('../models/LocationService');
+const DeletedRecord = require('../models/DeletedRecord');
 const { adminProtect } = require('../middleware/auth');
 const { upload, uploadToCloudinary } = require('../middleware/upload');
 
@@ -75,11 +77,99 @@ router.put('/users/:id/ban', adminProtect, async (req, res) => {
   }
 });
 
-// @DELETE /api/admin/users/:id
+// @DELETE /api/admin/users/:id — logs to history before deleting
 router.delete('/users/:id', adminProtect, async (req, res) => {
   try {
+    const user = await User.findById(req.params.id);
+    if (user) {
+      await DeletedRecord.create({
+        type:     'user',
+        recordId: user._id.toString(),
+        name:     user.name,
+        phone:    user.phone,
+        city:     user.location?.city || '',
+      });
+      await Ad.deleteMany({ userId: user._id });
+    }
     await User.findByIdAndDelete(req.params.id);
     res.json({ message: 'User deleted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ===================== LOCATIONS =====================
+
+// @GET /api/admin/locations — users grouped by city with service status
+router.get('/locations', adminProtect, async (req, res) => {
+  try {
+    const cityGroups = await User.aggregate([
+      { $match: { phone: { $ne: 'admin-internal' }, 'location.city': { $ne: '' } } },
+      {
+        $group: {
+          _id: '$location.city',
+          userCount:   { $sum: 1 },
+          activeCount: { $sum: { $cond: [{ $eq: ['$isBanned', false] }, 1, 0] } },
+          bannedCount: { $sum: { $cond: [{ $eq: ['$isBanned', true]  }, 1, 0] } },
+        }
+      },
+      { $sort: { userCount: -1 } }
+    ]);
+
+    const services = await LocationService.find();
+    const serviceMap = {};
+    services.forEach(s => { serviceMap[s.city] = s; });
+
+    const result = cityGroups.map(g => ({
+      city:            g._id,
+      userCount:       g.userCount,
+      activeCount:     g.activeCount,
+      bannedCount:     g.bannedCount,
+      isServiceActive: serviceMap[g._id]?.isActive ?? true,
+      reason:          serviceMap[g._id]?.reason    || '',
+      toggledAt:       serviceMap[g._id]?.toggledAt || null,
+    }));
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @PUT /api/admin/locations/toggle — activate/deactivate service for a city
+router.put('/locations/toggle', adminProtect, async (req, res) => {
+  try {
+    const { city, isActive, reason } = req.body;
+    if (!city) return res.status(400).json({ message: 'City is required' });
+
+    const service = await LocationService.findOneAndUpdate(
+      { city },
+      { isActive, reason: reason || '', toggledAt: new Date() },
+      { new: true, upsert: true }
+    );
+    res.json(service);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ===================== HISTORY =====================
+
+// @GET /api/admin/history — paginated deleted records
+router.get('/history', adminProtect, async (req, res) => {
+  try {
+    const { type, page = 1, limit = 20 } = req.query;
+    const filter = {};
+    if (type && type !== 'all') filter.type = type;
+
+    const skip  = (Number(page) - 1) * Number(limit);
+    const total = await DeletedRecord.countDocuments(filter);
+    const records = await DeletedRecord.find(filter)
+      .sort({ deletedAt: -1 })
+      .skip(skip)
+      .limit(Number(limit));
+
+    res.json({ records, total });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -123,9 +213,21 @@ router.put('/ads/:id/status', adminProtect, async (req, res) => {
   }
 });
 
-// @DELETE /api/admin/ads/:id
+// @DELETE /api/admin/ads/:id — logs to history before deleting
 router.delete('/ads/:id', adminProtect, async (req, res) => {
   try {
+    const ad = await Ad.findById(req.params.id).populate('userId', 'name');
+    if (ad) {
+      await DeletedRecord.create({
+        type:       'ad',
+        recordId:   ad._id.toString(),
+        title:      ad.title,
+        price:      ad.price,
+        category:   ad.category,
+        imageUrl:   ad.images?.[0] || '',
+        sellerName: ad.userId?.name || '',
+      });
+    }
     await Ad.findByIdAndDelete(req.params.id);
     res.json({ message: 'Ad deleted' });
   } catch (error) {
@@ -194,7 +296,6 @@ router.delete('/shops/:id', adminProtect, async (req, res) => {
 
 // ===================== BANNERS =====================
 
-// helper: resolve user from phone or ID
 async function resolveUser(identifier) {
   if (!identifier || !identifier.trim()) return null;
   let user;
@@ -209,7 +310,6 @@ async function resolveUser(identifier) {
   return user;
 }
 
-// helper: parse cities from body (JSON array string or comma-separated)
 function parseCities(raw) {
   if (!raw) return [];
   try { return JSON.parse(raw).filter(Boolean); } catch {}
@@ -234,7 +334,6 @@ router.post('/banners', adminProtect, upload.single('image'), async (req, res) =
     if (!req.file) return res.status(400).json({ message: 'Image is required' });
 
     const { targetUser, targetCities: rawCities, externalUrl } = req.body;
-
     const user = await resolveUser(targetUser);
     if (targetUser && targetUser.trim() && !user)
       return res.status(404).json({ message: 'Target user not found. Check the phone number.' });
@@ -258,7 +357,7 @@ router.post('/banners', adminProtect, upload.single('image'), async (req, res) =
   }
 });
 
-// @PUT /api/admin/banners/:id  — Edit banner (image optional)
+// @PUT /api/admin/banners/:id
 router.put('/banners/:id', adminProtect, upload.single('image'), async (req, res) => {
   try {
     const banner = await Banner.findById(req.params.id);
@@ -266,7 +365,6 @@ router.put('/banners/:id', adminProtect, upload.single('image'), async (req, res
 
     const { targetUser, targetCities: rawCities, externalUrl } = req.body;
 
-    // Update image if a new one was uploaded
     if (req.file) {
       const isGif = req.file.mimetype === 'image/gif';
       const cloudinaryOpts = isGif ? { format: 'gif', flags: 'animated' } : {};
@@ -274,7 +372,6 @@ router.put('/banners/:id', adminProtect, upload.single('image'), async (req, res
       banner.imageUrl = result.secure_url;
     }
 
-    // Update target user
     if (targetUser !== undefined) {
       const user = await resolveUser(targetUser);
       if (targetUser && targetUser.trim() && !user)
@@ -282,15 +379,8 @@ router.put('/banners/:id', adminProtect, upload.single('image'), async (req, res
       banner.targetUserId = user ? user._id : null;
     }
 
-    // Update external URL
-    if (externalUrl !== undefined) {
-      banner.externalUrl = externalUrl?.trim() || null;
-    }
-
-    // Update target cities
-    if (rawCities !== undefined) {
-      banner.targetCities = parseCities(rawCities);
-    }
+    if (externalUrl !== undefined) banner.externalUrl = externalUrl?.trim() || null;
+    if (rawCities   !== undefined) banner.targetCities = parseCities(rawCities);
 
     await banner.save();
     const populated = await banner.populate('targetUserId', 'name phone businessName');
@@ -334,7 +424,7 @@ router.put('/credentials', adminProtect, async (req, res) => {
       return res.status(400).json({ message: 'Both email and password are required' });
     }
 
-    const fs = require('fs');
+    const fs   = require('fs');
     const path = require('path');
     const envPath = path.join(__dirname, '..', '.env');
 
@@ -344,14 +434,12 @@ router.put('/credentials', adminProtect, async (req, res) => {
 
     let envContent = fs.readFileSync(envPath, 'utf8');
 
-    // Replace or add ADMIN_EMAIL
     if (envContent.includes('ADMIN_EMAIL=')) {
       envContent = envContent.replace(/^ADMIN_EMAIL=.*$/m, `ADMIN_EMAIL=${email}`);
     } else {
       envContent += `\nADMIN_EMAIL=${email}`;
     }
 
-    // Replace or add ADMIN_PASSWORD
     if (envContent.includes('ADMIN_PASSWORD=')) {
       envContent = envContent.replace(/^ADMIN_PASSWORD=.*$/m, `ADMIN_PASSWORD=${password}`);
     } else {
@@ -359,12 +447,9 @@ router.put('/credentials', adminProtect, async (req, res) => {
     }
 
     fs.writeFileSync(envPath, envContent);
-
-    // Update the runtime environment variables so a restart isn't strictly necessary
-    process.env.ADMIN_EMAIL = email;
+    process.env.ADMIN_EMAIL    = email;
     process.env.ADMIN_PASSWORD = password;
 
-    // We should also update the admin user in the database so that their email is kept in sync
     await User.findOneAndUpdate(
       { email: (process.env.ADMIN_EMAIL || '').toLowerCase() },
       { email: email.toLowerCase() },
