@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Check, X } from 'lucide-react';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../components/ConfirmModal';
 
 const EMOJIS = ['🧱','🏗️','🏖️','🔩','👷','⚡','📋','🔧','🪟','🎨','🏠','🪵','🔑','🚿','💡','🔌'];
 
@@ -11,6 +12,7 @@ export default function CategoriesPage() {
   const [adding, setAdding] = useState(false);
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState({ name: '', icon: '🧱' });
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => { fetchCats(); }, []);
 
@@ -40,13 +42,13 @@ export default function CategoriesPage() {
     } catch { toast.error('Failed'); }
   };
 
-  const deleteCat = async (id) => {
-    if (!confirm('Delete this category?')) return;
+  const deleteCat = async () => {
     try {
-      await api.delete(`/categories/${id}`);
-      setCats(prev => prev.filter(c => c._id !== id));
+      await api.delete(`/categories/${deleteTarget}`);
+      setCats(prev => prev.filter(c => c._id !== deleteTarget));
       toast.success('Deleted');
     } catch {}
+    finally { setDeleteTarget(null); }
   };
 
   const toggleActive = async (cat) => {
@@ -111,7 +113,7 @@ export default function CategoriesPage() {
                       <button className="btn btn-ghost btn-sm" onClick={() => { setEditId(cat._id); setAdding(false); setForm({ name: cat.name, icon: cat.icon }); }}>
                         <Edit size={13} /> Edit
                       </button>
-                      <button className="btn btn-danger btn-sm" onClick={() => deleteCat(cat._id)}>
+                      <button className="btn btn-danger btn-sm" onClick={() => setDeleteTarget(cat._id)}>
                         <Trash2 size={13} />
                       </button>
                     </div>
@@ -122,6 +124,15 @@ export default function CategoriesPage() {
           </table>
         )}
       </div>
+
+      {deleteTarget && (
+        <ConfirmModal
+          title="Delete Category?"
+          message="This category will be permanently removed. Any ads assigned to it may be affected."
+          onConfirm={deleteCat}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
     </div>
   );
 }

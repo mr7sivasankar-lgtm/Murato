@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Ban, Trash2, CheckCircle, X, MapPin, Phone, MessageCircle } from 'lucide-react';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -15,6 +16,9 @@ export default function UsersPage() {
   const [userDetails, setUserDetails] = useState(null);
   const [userAds, setUserAds] = useState([]);
   const [detailsLoading, setDetailsLoading] = useState(false);
+
+  // Delete confirm state
+  const [deleteTarget, setDeleteTarget] = useState(null); // { id, fromModal }
 
   useEffect(() => { fetchUsers(); }, [page]);
 
@@ -46,27 +50,23 @@ export default function UsersPage() {
   const toggleBan = async (user, fromModal = false) => {
     try {
       await api.put(`/admin/users/${user._id}/ban`, { isBanned: !user.isBanned });
-      
-      // Update table state
       setUsers(prev => prev.map(u => u._id === user._id ? { ...u, isBanned: !u.isBanned } : u));
-      
-      // Update modal state if open
       if (fromModal && userDetails) {
         setUserDetails(prev => ({ ...prev, isBanned: !prev.isBanned }));
       }
-
       toast.success(user.isBanned ? 'User unbanned' : 'User banned');
     } catch { toast.error('Failed'); }
   };
 
-  const deleteUser = async (id, fromModal = false) => {
-    if (!confirm('Delete this user permanently? This will also delete all their ads!')) return;
+  const deleteUser = async () => {
+    const { id, fromModal } = deleteTarget;
     try {
       await api.delete(`/admin/users/${id}`);
       setUsers(prev => prev.filter(u => u._id !== id));
       if (fromModal) setSelectedUser(null);
       toast.success('User deleted');
     } catch { toast.error('Failed'); }
+    finally { setDeleteTarget(null); }
   };
 
   const pages = Math.ceil(total / 15);
@@ -136,7 +136,7 @@ export default function UsersPage() {
                         {user.isBanned ? <CheckCircle size={13} /> : <Ban size={13} />}
                         {user.isBanned ? 'Unban' : 'Ban'}
                       </button>
-                      <button className="btn btn-danger btn-sm" onClick={() => deleteUser(user._id)}>
+                      <button className="btn btn-danger btn-sm" onClick={() => setDeleteTarget({ id: user._id, fromModal: false })}>
                         <Trash2 size={13} />
                       </button>
                     </div>
@@ -181,13 +181,11 @@ export default function UsersPage() {
                       <div>
                         <h3 style={{ fontSize: 20, fontWeight: 800 }}>{userDetails.name}</h3>
                         {userDetails.businessName && <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 2 }}>🏢 {userDetails.businessName}</p>}
-                        
                         <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
                           <span style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}><Phone size={14} color="var(--text-secondary)"/> {userDetails.phone}</span>
                           <span style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} color="var(--text-secondary)"/> {userDetails.location?.city ? `${userDetails.location.city}, ${userDetails.location.area}` : 'Location not set'}</span>
                         </div>
                       </div>
-                      
                       <div style={{ display: 'flex', gap: 8, flexDirection: 'column', alignItems: 'flex-end' }}>
                         <span className={`badge ${userDetails.isBanned ? 'badge-banned' : 'badge-active'}`} style={{ fontSize: 13, padding: '4px 12px' }}>
                           {userDetails.isBanned ? 'Banned' : 'Active Account'}
@@ -197,7 +195,7 @@ export default function UsersPage() {
                             {userDetails.isBanned ? <CheckCircle size={14} /> : <Ban size={14} />}
                             {userDetails.isBanned ? 'Unban User' : 'Ban User'}
                           </button>
-                          <button className="btn btn-danger btn-sm" onClick={() => deleteUser(userDetails._id, true)}>
+                          <button className="btn btn-danger btn-sm" onClick={() => setDeleteTarget({ id: userDetails._id, fromModal: true })}>
                             <Trash2 size={14} /> Delete
                           </button>
                         </div>
@@ -226,7 +224,7 @@ export default function UsersPage() {
                 <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, borderBottom: '1px solid var(--border)', paddingBottom: 8 }}>
                   Posted Ads ({userAds.length})
                 </h3>
-                
+
                 {userAds.length === 0 ? (
                   <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px 0' }}>This user has not posted any ads yet.</p>
                 ) : (
@@ -252,6 +250,16 @@ export default function UsersPage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Delete Confirmation */}
+      {deleteTarget && (
+        <ConfirmModal
+          title="Delete User?"
+          message="This will permanently delete the user and all their ads. This action cannot be undone."
+          onConfirm={deleteUser}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   );

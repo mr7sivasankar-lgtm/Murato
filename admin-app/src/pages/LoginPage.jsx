@@ -12,9 +12,9 @@ export default function LoginPage({ onLogin }) {
     try {
       const { data } = await api.post('/auth/login', form);
       if (!data.isAdmin) return toast.error('Admin access only');
-      localStorage.setItem('murato_admin_token', data.token);
+      localStorage.setItem('myillo_admin_token', data.token);
       onLogin(data);
-      toast.success('Welcome, Admin! 🏗️');
+      toast.success('Welcome, Admin! 🏠');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Login failed');
     } finally {
@@ -25,24 +25,40 @@ export default function LoginPage({ onLogin }) {
   return (
     <div className="admin-login">
       <div className="login-card">
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 48, marginBottom: 8 }}>🏗️</div>
-          <h1>Murato Admin</h1>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <img src="/myillo-logo.png" alt="Myillo" className="login-logo" />
+          <h1>Myillo Admin</h1>
           <p>Sign in to manage the marketplace</p>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Admin Email</label>
-            <input className="form-input" type="email" placeholder="admin@murato.com" value={form.email}
-              onChange={e => setForm({ ...form, email: e.target.value })} required />
+            <input
+              className="form-input"
+              type="email"
+              placeholder="admin@myillo.com"
+              value={form.email}
+              onChange={e => setForm({ ...form, email: e.target.value })}
+              required
+            />
           </div>
           <div className="form-group">
             <label className="form-label">Password</label>
-            <input className="form-input" type="password" placeholder="••••••••" value={form.password}
-              onChange={e => setForm({ ...form, password: e.target.value })} required />
+            <input
+              className="form-input"
+              type="password"
+              placeholder="••••••••"
+              value={form.password}
+              onChange={e => setForm({ ...form, password: e.target.value })}
+              required
+            />
           </div>
-          <button className="btn btn-primary" type="submit" disabled={loading}
-            style={{ width: '100%', justifyContent: 'center', padding: 13, fontSize: 15, borderRadius: 10 }}>
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={loading}
+            style={{ width: '100%', justifyContent: 'center', padding: 14, fontSize: 15, borderRadius: 12, marginTop: 4 }}
+          >
             {loading ? 'Signing in...' : '🔐 Sign In'}
           </button>
         </form>

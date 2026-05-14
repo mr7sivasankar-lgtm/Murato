@@ -13,34 +13,34 @@ import BannersPage from './pages/BannersPage';
 import SettingsPage from './pages/SettingsPage';
 
 const NAV = [
-  { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
-  { key: 'users', label: 'Users', icon: <Users size={18} /> },
-  { key: 'ads', label: 'Ads', icon: <FileText size={18} /> },
-  { key: 'categories', label: 'Categories', icon: <Tag size={18} /> },
-  { key: 'banners', label: 'Banners', icon: <Image size={18} /> },
-  { key: 'support',    label: 'Support',    icon: <LifeBuoy size={18} /> },
-  { key: 'settings',   label: 'Settings',   icon: <Settings size={18} /> },
+  { key: 'dashboard',  label: 'Dashboard',  icon: <LayoutDashboard size={18} /> },
+  { key: 'users',      label: 'Users',       icon: <Users size={18} /> },
+  { key: 'ads',        label: 'Ads',         icon: <FileText size={18} /> },
+  { key: 'categories', label: 'Categories',  icon: <Tag size={18} /> },
+  { key: 'banners',    label: 'Banners',     icon: <Image size={18} /> },
+  { key: 'support',    label: 'Support',     icon: <LifeBuoy size={18} /> },
+  { key: 'settings',   label: 'Settings',    icon: <Settings size={18} /> },
 ];
 
 const PAGES = {
-  dashboard: <Dashboard />,
-  users: <UsersPage />,
-  ads: <AdsPage />,
+  dashboard:  <Dashboard />,
+  users:      <UsersPage />,
+  ads:        <AdsPage />,
   categories: <CategoriesPage />,
-  banners: <BannersPage />,
+  banners:    <BannersPage />,
   support:    <SupportPage />,
   settings:   <SettingsPage />,
 };
 
 export default function App() {
   const [admin, setAdmin] = useState(() => {
-    const token = localStorage.getItem('murato_admin_token');
+    const token = localStorage.getItem('myillo_admin_token');
     return token ? { token } : null;
   });
   const [page, setPage] = useState('dashboard');
 
   const logout = () => {
-    localStorage.removeItem('murato_admin_token');
+    localStorage.removeItem('myillo_admin_token');
     setAdmin(null);
   };
 
@@ -58,18 +58,30 @@ export default function App() {
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <h1>🏗️ <span>Murato</span></h1>
+          <img src="/myillo-logo.png" alt="Myillo" className="sidebar-logo-img" />
+          <h1><span>Myillo</span></h1>
           <p>Admin Panel</p>
         </div>
+
         <nav className="sidebar-nav">
           {NAV.map(item => (
-            <button key={item.key} className={`sidebar-item ${page === item.key ? 'active' : ''}`} onClick={() => setPage(item.key)}>
+            <button
+              key={item.key}
+              className={`sidebar-item ${page === item.key ? 'active' : ''}`}
+              onClick={() => setPage(item.key)}
+            >
               {item.icon}
               <span>{item.label}</span>
             </button>
           ))}
-          <div style={{ flex: 1 }} />
-          <button className="sidebar-item" onClick={logout} style={{ marginTop: 'auto', color: '#ef4444' }}>
+
+          <div className="sidebar-divider" style={{ marginTop: 'auto' }} />
+
+          <button
+            className="sidebar-item"
+            onClick={logout}
+            style={{ color: '#fca5a5' }}
+          >
             <LogOut size={18} />
             <span>Logout</span>
           </button>

@@ -3,6 +3,7 @@ import { Image, Trash2, Plus, Power, MapPin, User, Search, X, Edit2 } from 'luci
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import CropModal from '../components/CropModal';
+import ConfirmModal from '../components/ConfirmModal';
 
 /* ── Nominatim city autocomplete ── */
 function LocationInput({ onAdd }) {
@@ -244,7 +245,7 @@ function BannerModal({ initial, onSave, onClose, uploading }) {
               {/* Fake header */}
               <div style={{ background: 'linear-gradient(135deg, rgba(224,231,255,0.95) 0%, rgba(250,232,255,0.9) 100%)', borderRadius: '12px 12px 0 0', padding: '8px 10px 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ fontSize: 9, color: '#1a2b5f', fontWeight: 700 }}>📍 Tirupati</div>
-                <div style={{ fontSize: 11, fontWeight: 900, color: '#1a2b5f' }}>Murato</div>
+                <div style={{ fontSize: 11, color: '#1a2b5f', fontWeight: 700 }}>Myillo</div>
                 <div style={{ width: 24 }} />
               </div>
               {/* Fake search bar */}
@@ -309,6 +310,7 @@ export default function BannersPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editBanner, setEditBanner] = useState(null);
   const [uploading, setUploading]   = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => { fetchBanners(); }, []);
 
@@ -351,12 +353,12 @@ export default function BannersPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this banner?')) return;
     try {
       await api.delete(`/admin/banners/${id}`);
       setBanners(p => p.filter(b => b._id !== id));
-      toast.success('Deleted');
+      toast.success('Banner deleted');
     } catch { toast.error('Failed'); }
+    finally { setDeleteTarget(null); }
   };
 
   return (
@@ -426,7 +428,7 @@ export default function BannersPage() {
                   >
                     <Power size={14} /> Pause
                   </button>
-                  <button className="btn btn-sm btn-danger" style={{ padding: '0 12px' }} onClick={() => handleDelete(banner._id)}>
+                  <button className="btn btn-sm btn-danger" style={{ padding: '0 12px' }} onClick={() => setDeleteTarget(banner._id)}>
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -438,6 +440,15 @@ export default function BannersPage() {
 
       {showCreate && <BannerModal onSave={handleCreate} onClose={() => setShowCreate(false)} uploading={uploading} />}
       {editBanner  && <BannerModal initial={editBanner} onSave={handleEdit} onClose={() => setEditBanner(null)} uploading={uploading} />}
+
+      {deleteTarget && (
+        <ConfirmModal
+          title="Delete Banner?"
+          message="This banner will be permanently removed and will no longer appear in the app. This action cannot be undone."
+          onConfirm={() => handleDelete(deleteTarget)}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
     </div>
   );
 }

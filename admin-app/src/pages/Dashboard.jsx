@@ -27,7 +27,7 @@ export default function Dashboard() {
     <div>
       <div className="topbar">
         <h2>📊 Dashboard</h2>
-        <span className="admin-badge">🏗️ Murato Admin</span>
+        <span className="admin-badge">🏠 Myillo Admin</span>
       </div>
 
       {loading ? <div className="spinner" /> : (

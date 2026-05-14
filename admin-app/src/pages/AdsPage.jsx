@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Trash2, Star, CheckCircle, XCircle, Flag } from 'lucide-react';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../components/ConfirmModal';
 
 const STATUS_TABS = ['all', 'active', 'pending', 'rejected'];
 
@@ -12,6 +13,7 @@ export default function AdsPage() {
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => { fetchAds(); }, [status, page]);
 
@@ -41,13 +43,13 @@ export default function AdsPage() {
     } catch {}
   };
 
-  const deleteAd = async (id) => {
-    if (!confirm('Delete this ad permanently?')) return;
+  const deleteAd = async () => {
     try {
-      await api.delete(`/admin/ads/${id}`);
-      setAds(prev => prev.filter(a => a._id !== id));
+      await api.delete(`/admin/ads/${deleteTarget}`);
+      setAds(prev => prev.filter(a => a._id !== deleteTarget));
       toast.success('Ad deleted');
     } catch {}
+    finally { setDeleteTarget(null); }
   };
 
   const pages = Math.ceil(total / 15);
@@ -118,7 +120,7 @@ export default function AdsPage() {
                       </button>
                       {ad.status !== 'active' && <button className="btn btn-success btn-sm" onClick={() => updateStatus(ad, 'active')}><CheckCircle size={12} /> Approve</button>}
                       {ad.status !== 'rejected' && <button className="btn btn-warning btn-sm" onClick={() => updateStatus(ad, 'rejected')}><XCircle size={12} /></button>}
-                      <button className="btn btn-danger btn-sm" onClick={() => deleteAd(ad._id)}><Trash2 size={12} /></button>
+                      <button className="btn btn-danger btn-sm" onClick={() => setDeleteTarget(ad._id)}><Trash2 size={12} /></button>
                     </div>
                   </td>
                 </tr>
@@ -135,6 +137,15 @@ export default function AdsPage() {
           </div>
         )}
       </div>
+
+      {deleteTarget && (
+        <ConfirmModal
+          title="Delete Ad?"
+          message="This ad will be permanently deleted and cannot be recovered."
+          onConfirm={deleteAd}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
     </div>
   );
 }
