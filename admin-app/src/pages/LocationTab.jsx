@@ -76,7 +76,39 @@ export default function LocationTab() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 18 }}>
-          {locations.map(loc => (
+          {locations.map(loc => {
+            // Special card for users with no location set
+            if (loc.noLocation) return (
+              <div key="no-location" style={{
+                background: 'white', borderRadius: 16, padding: 20,
+                boxShadow: 'var(--shadow)', border: '2px dashed #cbd5e1',
+                position: 'relative', overflow: 'hidden',
+              }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: 'linear-gradient(90deg,#94a3b8,#cbd5e1)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 12, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>❓</div>
+                  <div>
+                    <h3 style={{ fontWeight: 800, fontSize: 16, color: 'var(--text-primary)' }}>No Location Set</h3>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', background: '#f1f5f9', padding: '2px 8px', borderRadius: 20 }}>● Location Not Set</span>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                  <div style={{ background: '#f8fafc', borderRadius: 10, padding: 10, textAlign: 'center' }}>
+                    <div style={{ fontSize: 22, fontWeight: 800 }}>{loc.userCount}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>Users</div>
+                  </div>
+                  <div style={{ background: '#f8fafc', borderRadius: 10, padding: 10, textAlign: 'center' }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#f97316' }}>{Math.round((loc.userCount / totalUsers) * 100) || 0}%</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>of Total</div>
+                  </div>
+                </div>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', background: '#f8fafc', borderRadius: 8, padding: '8px 12px' }}>
+                  💡 These users registered but haven't set their city in the app yet. They'll appear in a city group once they do.
+                </p>
+              </div>
+            );
+
+            // Normal city card
             <div key={loc.city} style={{
               background: 'white',
               borderRadius: 16,
@@ -130,7 +162,7 @@ export default function LocationTab() {
                 </div>
               )}
             </div>
-          ))}
+          })}
         </div>
       )}
 

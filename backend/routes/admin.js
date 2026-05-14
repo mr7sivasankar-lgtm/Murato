@@ -103,6 +103,7 @@ router.delete('/users/:id', adminProtect, async (req, res) => {
 // @GET /api/admin/locations — users grouped by city with service status
 router.get('/locations', adminProtect, async (req, res) => {
   try {
+    // Group users WITH a city set
     const cityGroups = await User.aggregate([
       { $match: { phone: { $ne: 'admin-internal' }, 'location.city': { $ne: '' } } },
       {
@@ -116,6 +117,12 @@ router.get('/locations', adminProtect, async (req, res) => {
       { $sort: { userCount: -1 } }
     ]);
 
+    // Count users WITHOUT any location
+    const noLocationCount = await User.countDocuments({
+      phone: { $ne: 'admin-internal' },
+      $or: [{ 'location.city': '' }, { 'location.city': { $exists: false } }],
+    });
+
     const services = await LocationService.find();
     const serviceMap = {};
     services.forEach(s => { serviceMap[s.city] = s; });
@@ -128,7 +135,22 @@ router.get('/locations', adminProtect, async (req, res) => {
       isServiceActive: serviceMap[g._id]?.isActive ?? true,
       reason:          serviceMap[g._id]?.reason    || '',
       toggledAt:       serviceMap[g._id]?.toggledAt || null,
+      noLocation:      false,
     }));
+
+    // Append the "no location" virtual group at the end if any
+    if (noLocationCount > 0) {
+      result.push({
+        city:            '__no_location__',
+        userCount:       noLocationCount,
+        activeCount:     noLocationCount,
+        bannedCount:     0,
+        isServiceActive: true,
+        reason:          '',
+        toggledAt:       null,
+        noLocation:      true,
+      });
+    }
 
     res.json(result);
   } catch (error) {
