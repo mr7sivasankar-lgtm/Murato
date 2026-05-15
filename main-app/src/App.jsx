@@ -6,6 +6,7 @@ import SplashScreen from './components/SplashScreen';
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { initPush, clearPushListeners } from './services/PushNotificationService';
+import LocationConfirmModal from './components/LocationConfirmModal';
 
 /* ── Android hardware back-button handler ── */
 function AndroidBackHandler() {
@@ -125,6 +126,7 @@ function AppRoutes() {
       <AndroidBackHandler />
       <PushNotificationInitialiser />
       <LocationPermissionInitialiser />
+      <LocationConfirmModal />
       <Routes>
         <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
         <Route path="/login" element={<LoginPage />} />
