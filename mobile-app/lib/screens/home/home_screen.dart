@@ -100,8 +100,26 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Text('Myillo 🏗️',
                             style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.navy)),
-                          Text('Hi, ${user?['name'] ?? 'there'}!',
-                            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                          RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'Hi ',
+                                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                                ),
+                                TextSpan(
+                                  text: (user?['name'] as String? ?? 'U').isNotEmpty
+                                      ? (user!['name'] as String).substring(0, 1).toUpperCase()
+                                      : 'U',
+                                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.orange),
+                                ),
+                                TextSpan(
+                                  text: ' 👋',
+                                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                       const Spacer(),

@@ -319,12 +319,12 @@ export default function HomePage() {
           {/* Right: greeting */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{
-              background: 'var(--navy)', color: 'white',
+              background: '#e87e04', color: 'white',
               borderRadius: 20, padding: '4px 12px',
               fontSize: 13, fontWeight: 700, letterSpacing: 0.2,
               whiteSpace: 'nowrap',
             }}>
-              Hi, {user?.name?.split(' ')[0] || 'User'} 👋
+              Hi {user?.name?.charAt(0).toUpperCase() || 'U'} 👋
             </div>
           </div>
         </div>
@@ -352,11 +352,10 @@ export default function HomePage() {
 
       {/* Categories */}
       <div style={{ margin: '16px 0 24px' }}>
-        <div style={{ padding: '0 20px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ padding: '0 20px', marginBottom: 12 }}>
           <p style={{ fontSize: 17, fontWeight: 700, color: 'var(--text-primary)' }}>
             {t('browseCategories')} <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-muted)', marginLeft: 4 }}>{PRODUCT_CATEGORIES.length}+</span>
           </p>
-          <button className="see-more">{t('seeAll')}</button>
         </div>
         <div className="category-scroll">
           {PRODUCT_CATEGORIES.map((cat) => (
