@@ -228,6 +228,23 @@ export default function HomePage() {
     detectLocation();
   }, []);
 
+  // When LocationConfirmModal confirms an address, it dispatches this event.
+  // We read the fresh cache so the header city updates without a full page reload.
+  useEffect(() => {
+    const handler = () => {
+      try {
+        const cached = JSON.parse(localStorage.getItem('myillo_location') || 'null');
+        if (cached?.city) {
+          setDisplayCity(cached.city);
+          if (cached.coords) setDisplayCoords(cached.coords);
+          setLocLoading(false);
+        }
+      } catch {}
+    };
+    window.addEventListener('myillo:location-updated', handler);
+    return () => window.removeEventListener('myillo:location-updated', handler);
+  }, []);
+
   useEffect(() => { fetchAds(); }, [activeCategory, displayCity, displayCoords]);
   useEffect(() => { fetchFeatured(); }, []);
   useEffect(() => { fetchBanners(); }, [displayCity]); // re-fetch when GPS city resolves

@@ -62,31 +62,6 @@ function PushNotificationInitialiser() {
   return null;
 }
 
-/* ── Request location permission once on first launch ── */
-function LocationPermissionInitialiser() {
-  useEffect(() => {
-    // Only ask once — skip if we already asked before
-    if (localStorage.getItem('myillo_loc_perm_asked')) return;
-
-    const requestLocPerm = async () => {
-      try {
-        const { Geolocation } = await import('@capacitor/geolocation');
-        // This triggers the native Android permission dialog immediately
-        await Geolocation.requestPermissions();
-      } catch {
-        // Not on Capacitor (web browser) — ignore
-      } finally {
-        // Mark as asked so we never show the dialog again on subsequent launches
-        localStorage.setItem('myillo_loc_perm_asked', '1');
-      }
-    };
-
-    // Small delay so the push notification dialog (if shown) settles first
-    const timer = setTimeout(requestLocPerm, 1500);
-    return () => clearTimeout(timer);
-  }, []);
-  return null;
-}
 
 // Pages
 import HomePage           from './pages/HomePage';
@@ -125,7 +100,6 @@ function AppRoutes() {
     <>
       <AndroidBackHandler />
       <PushNotificationInitialiser />
-      <LocationPermissionInitialiser />
       <LocationConfirmModal />
       <Routes>
         <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
