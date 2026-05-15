@@ -490,9 +490,6 @@ export default function LoginPage() {
         </div>
       )}
 
-      <button onClick={() => navigate('/')} style={{ width: '100%', textAlign: 'center', marginTop: 14, fontSize: 13, color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer' }}>
-        Skip for now
-      </button>
     </Wrapper>
   );
 
