@@ -12,7 +12,7 @@
  *   5. Saved to backend, modal closes
  */
 import { useEffect, useState } from 'react';
-import { MapPin, X } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
@@ -110,17 +110,13 @@ export default function LocationConfirmModal() {
     }
   };
 
-  const handleSkip = () => {
-    sessionStorage.setItem(STORAGE_KEY, '1');
-    setVisible(false);
-  };
 
   if (!visible) return null;
 
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999,
-      background: 'rgba(0,0,0,0.55)',
+      background: 'rgba(0,0,0,0.65)',
       display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
       padding: '0 0 24px',
       animation: 'fadeIn 0.25s ease',
@@ -135,14 +131,9 @@ export default function LocationConfirmModal() {
         animation: 'slideUp 0.3s ease',
       }}>
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-          <div>
-            <h3 style={{ fontSize: 17, fontWeight: 800, color: '#1a2b5f', margin: 0 }}>📍 Confirm Your Address</h3>
-            <p style={{ fontSize: 12, color: '#6b7280', marginTop: 3 }}>So nearby buyers & sellers can find you</p>
-          </div>
-          <button onClick={handleSkip} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-            <X size={20} color="#9ca3af" />
-          </button>
+        <div style={{ marginBottom: 18 }}>
+          <h3 style={{ fontSize: 17, fontWeight: 800, color: '#1a2b5f', margin: 0 }}>📍 Confirm Your Address</h3>
+          <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>Required to continue — helps nearby buyers &amp; sellers find you</p>
         </div>
 
         {/* Detecting spinner */}
@@ -268,9 +259,7 @@ export default function LocationConfirmModal() {
           </div>
         )}
 
-        <button onClick={handleSkip} style={{ width: '100%', textAlign: 'center', fontSize: 13, color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer' }}>
-          Skip for now
-        </button>
+
       </div>
 
       <style>{`
