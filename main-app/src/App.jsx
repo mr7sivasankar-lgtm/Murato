@@ -48,20 +48,6 @@ function AndroidBackHandler() {
   return null;
 }
 
-/* ── Init push notifications when user logs in ── */
-function PushNotificationInitialiser() {
-  const { user } = useAuth();
-  useEffect(() => {
-    if (user) {
-      initPush();
-    } else {
-      clearPushListeners();
-    }
-    return () => {};
-  }, [!!user]);
-  return null;
-}
-
 
 // Pages
 import HomePage           from './pages/HomePage';
@@ -99,7 +85,6 @@ function AppRoutes() {
   return (
     <>
       <AndroidBackHandler />
-      <PushNotificationInitialiser />
       <LocationConfirmModal />
       <Routes>
         <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />

@@ -62,8 +62,20 @@ export default function LocationConfirmModal() {
 
   // ── Init on user login ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!user || user.location?.city) return;
-    if (localStorage.getItem(CONFIRMED_KEY)) return;
+    if (!user) return; // not logged in
+
+    const hasConfirmedLoc = user.location?.city || localStorage.getItem(CONFIRMED_KEY);
+
+    if (hasConfirmedLoc) {
+      // User already confirmed location — just initialise push (if not already done)
+      if (!runOnce.current) {
+        runOnce.current = true;
+        initPush().catch(() => {});
+      }
+      return;
+    }
+
+    // New user or needs to confirm location
     if (runOnce.current) return;
     runOnce.current = true;
 
@@ -83,7 +95,7 @@ export default function LocationConfirmModal() {
         setAddress('Could not detect location');
       }
 
-      // 2. Push notification permission (after location)
+      // 2. Push notification permission (after location permission is handled)
       try { await initPush(); } catch {}
 
       // 3. Show map modal
