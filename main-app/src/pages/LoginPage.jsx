@@ -403,27 +403,94 @@ export default function LoginPage() {
 
   /* ── STEP: location ── */
   if (step === 'location') return (
-    <Wrapper icon={<MapPin size={36} color="white" strokeWidth={1.5} />} title="Where are you?" subtitle="Help buyers find you nearby">
-      <p style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>City / Town *</p>
-      <input className="form-input" placeholder="e.g. Hyderabad" value={city} autoFocus
-        onChange={e => setCity(e.target.value)} style={{ marginBottom: 14, borderRadius: 12 }} />
-      <p style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>Area / Locality</p>
-      <input className="form-input" placeholder="e.g. Kukatpally" value={area}
-        onChange={e => setArea(e.target.value)} style={{ marginBottom: 14, borderRadius: 12 }} />
-      <p style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>Pincode</p>
-      <input className="form-input" placeholder="e.g. 500072" value={pincode}
-        type="tel" maxLength={6}
-        onChange={e => setPincode(e.target.value.replace(/\D/g, ''))} style={{ marginBottom: 16, borderRadius: 12 }} />
-      <div style={{ textAlign: 'center', marginBottom: 16 }}>
-        <button onClick={autoDetectLocation} disabled={loading} style={{ background: 'none', border: 'none', color: '#e87e04', fontWeight: 700, fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-          <MapPin size={16} /> Auto-detect Location
-        </button>
-      </div>
-      <button onClick={handleLocationSave} className="btn btn-primary" disabled={loading || !city.trim()}
-        style={{ borderRadius: 50, fontWeight: 800, fontSize: 16, opacity: !city.trim() ? 0.5 : 1 }}>
-        {loading ? 'Saving...' : '✅ Done, Let\'s Go!'}
-      </button>
-      <button onClick={() => navigate('/')} style={{ width: '100%', textAlign: 'center', marginTop: 12, fontSize: 13, color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer' }}>
+    <Wrapper icon={<MapPin size={36} color="white" strokeWidth={1.5} />} title="Confirm Your Location" subtitle="Help buyers & sellers find you nearby">
+
+      {/* Auto-detect banner */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '20px 0', color: '#6b7280' }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>📡</div>
+          <p style={{ fontWeight: 700, fontSize: 15, color: '#1a2b5f' }}>Detecting your location…</p>
+          <p style={{ fontSize: 13, marginTop: 4 }}>Please wait a moment</p>
+        </div>
+      ) : city ? (
+        /* ── Confirm Address Card ── */
+        <div>
+          <div style={{
+            background: 'linear-gradient(135deg,#f0fdf4,#dcfce7)',
+            border: '2px solid #86efac',
+            borderRadius: 18,
+            padding: '18px 20px',
+            marginBottom: 20,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <span style={{ fontSize: 28 }}>📍</span>
+              <div>
+                <p style={{ fontWeight: 800, fontSize: 15, color: '#15803d' }}>Location Detected</p>
+                <p style={{ fontSize: 12, color: '#166534' }}>Please confirm your address below</p>
+              </div>
+            </div>
+            {[
+              { label: 'City / Town', value: city,    icon: '🏙️' },
+              { label: 'Area',        value: area,    icon: '📌' },
+              { label: 'Pincode',     value: pincode, icon: '🔢' },
+            ].map(row => (
+              <div key={row.label} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '9px 12px', background: 'rgba(255,255,255,0.7)',
+                borderRadius: 10, marginBottom: 8,
+              }}>
+                <span style={{ fontSize: 18, flexShrink: 0 }}>{row.icon}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5 }}>{row.label}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1a2b5f' }}>{row.value || '—'}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button onClick={handleLocationSave} disabled={loading || !city.trim()}
+            style={{
+              width: '100%', padding: '14px', borderRadius: 50, border: 'none', cursor: 'pointer',
+              background: 'linear-gradient(135deg,#15803d,#16a34a)', color: 'white',
+              fontWeight: 800, fontSize: 16, marginBottom: 12,
+              boxShadow: '0 4px 16px rgba(21,128,61,0.3)',
+            }}>
+            ✅ Yes, Confirm This Address
+          </button>
+          <button onClick={() => { setCity(''); setArea(''); setPincode(''); }}
+            style={{ width: '100%', textAlign: 'center', fontSize: 13, color: '#e87e04', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 8 }}>
+            ✏️ Edit Address Manually
+          </button>
+        </div>
+      ) : (
+        /* ── Manual Entry ── */
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>City / Town *</p>
+          <input className="form-input" placeholder="e.g. Tirupati" value={city} autoFocus
+            onChange={e => setCity(e.target.value)} style={{ marginBottom: 14, borderRadius: 12 }} />
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>Area / Locality</p>
+          <input className="form-input" placeholder="e.g. Alipiri" value={area}
+            onChange={e => setArea(e.target.value)} style={{ marginBottom: 14, borderRadius: 12 }} />
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>Pincode</p>
+          <input className="form-input" placeholder="e.g. 517501" value={pincode}
+            type="tel" maxLength={6}
+            onChange={e => setPincode(e.target.value.replace(/\D/g, ''))} style={{ marginBottom: 16, borderRadius: 12 }} />
+
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <button onClick={autoDetectLocation} disabled={loading}
+              style={{ background: 'none', border: '2px solid #e87e04', color: '#e87e04', fontWeight: 700, fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', padding: '8px 20px', borderRadius: 50 }}>
+              <MapPin size={16} /> 📡 Auto-detect My Location
+            </button>
+          </div>
+
+          <button onClick={handleLocationSave} className="btn btn-primary" disabled={loading || !city.trim()}
+            style={{ borderRadius: 50, fontWeight: 800, fontSize: 16, opacity: !city.trim() ? 0.5 : 1 }}>
+            {loading ? 'Saving...' : '✅ Confirm & Continue'}
+          </button>
+        </div>
+      )}
+
+      <button onClick={() => navigate('/')} style={{ width: '100%', textAlign: 'center', marginTop: 14, fontSize: 13, color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer' }}>
         Skip for now
       </button>
     </Wrapper>
