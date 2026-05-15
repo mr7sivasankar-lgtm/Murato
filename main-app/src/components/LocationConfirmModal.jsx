@@ -85,13 +85,38 @@ export default function LocationConfirmModal() {
       try {
         const { Geolocation } = await import('@capacitor/geolocation');
         await Geolocation.requestPermissions();
-        const pos = await Geolocation.getCurrentPosition({ timeout: 12000, enableHighAccuracy: false });
+        // Try high accuracy first
+        let pos;
+        try {
+          pos = await Geolocation.getCurrentPosition({ timeout: 8000, enableHighAccuracy: true });
+        } catch {
+          // Fallback to low accuracy if high accuracy times out
+          pos = await Geolocation.getCurrentPosition({ timeout: 10000, enableHighAccuracy: false });
+        }
         clat = pos.coords.latitude;
         clng = pos.coords.longitude;
-        setLat(clat); setLng(clng);
-        const geo = await reverseGeocode(clat, clng);
-        applyGeo(geo);
       } catch {
+        // Fallback to browser geolocation if Capacitor fails entirely
+        if (navigator.geolocation) {
+          try {
+            const pos = await new Promise((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000, enableHighAccuracy: true });
+            });
+            clat = pos.coords.latitude;
+            clng = pos.coords.longitude;
+          } catch {}
+        }
+      }
+
+      if (clat && clng) {
+        setLat(clat); setLng(clng);
+        try {
+          const geo = await reverseGeocode(clat, clng);
+          applyGeo(geo);
+        } catch {
+          setAddress('Location detected, loading address...');
+        }
+      } else {
         setAddress('Could not detect location');
       }
 
@@ -119,7 +144,7 @@ export default function LocationConfirmModal() {
     (async () => {
       const L = await loadLeaflet();
       const map = L.map(mapDivRef.current, {
-        center: [lat || 17.3850, lng || 78.4867],
+        center: [lat || 13.6288, lng || 79.4192], // Fallback to Tirupati if GPS fails
         zoom: 15,
         zoomControl: false,
         attributionControl: false,
@@ -173,14 +198,27 @@ export default function LocationConfirmModal() {
   };
 
   const reDetect = async () => {
+    setAddress('Detecting…');
     try {
+      let clat = null, clng = null;
       const { Geolocation } = await import('@capacitor/geolocation');
-      const pos = await Geolocation.getCurrentPosition({ timeout: 12000 });
-      const clat = pos.coords.latitude, clng = pos.coords.longitude;
-      setLat(clat); setLng(clng);
-      if (leafletRef.current) leafletRef.current.setView([clat, clng], 15);
-      applyGeo(await reverseGeocode(clat, clng));
-    } catch {}
+      let pos;
+      try {
+        pos = await Geolocation.getCurrentPosition({ timeout: 8000, enableHighAccuracy: true });
+      } catch {
+        pos = await Geolocation.getCurrentPosition({ timeout: 10000, enableHighAccuracy: false });
+      }
+      clat = pos.coords.latitude;
+      clng = pos.coords.longitude;
+
+      if (clat && clng) {
+        setLat(clat); setLng(clng);
+        if (leafletRef.current) leafletRef.current.setView([clat, clng], 15);
+        applyGeo(await reverseGeocode(clat, clng));
+      }
+    } catch {
+      setAddress('Could not detect location');
+    }
     setPhase('map');
   };
 
