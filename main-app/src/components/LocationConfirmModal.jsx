@@ -318,6 +318,22 @@ export default function LocationConfirmModal() {
           <div style={{ width: 36, height: 36, borderRadius: '50% 50% 50% 0', background: '#1a2b5f', transform: 'rotate(-45deg)', boxShadow: '0 4px 12px rgba(0,0,0,0.35)' }} />
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'rgba(0,0,0,0.2)', marginTop: 2 }} />
         </div>
+
+        {/* GPS "Locate Me" button — bottom right of map */}
+        <button
+          onClick={reDetect}
+          title="Use my current location"
+          style={{
+            position: 'absolute', bottom: 16, right: 16, zIndex: 1000,
+            width: 46, height: 46, borderRadius: '50%',
+            background: 'white', border: 'none',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 22,
+          }}
+        >
+          📡
+        </button>
       </div>
 
       {/* BOTTOM SHEET */}
