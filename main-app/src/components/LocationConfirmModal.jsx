@@ -6,18 +6,21 @@ import { initPush } from '../services/PushNotificationService';
 const CONFIRMED_KEY = 'myillo_loc_confirmed';
 const CACHE_KEY     = 'myillo_location';
 
-// Load Leaflet from CDN once
-function loadLeaflet() {
+const KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY || '';
+
+function loadGoogleMaps() {
   return new Promise((resolve) => {
-    if (window.L) { resolve(window.L); return; }
-    const css = document.createElement('link');
-    css.rel = 'stylesheet';
-    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    document.head.appendChild(css);
-    const js = document.createElement('script');
-    js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    js.onload = () => resolve(window.L);
-    document.head.appendChild(js);
+    if (window.google?.maps) { resolve(); return; }
+    if (document.getElementById('gmaps-js')) {
+      const wait = setInterval(() => { if (window.google?.maps) { clearInterval(wait); resolve(); } }, 100);
+      return;
+    }
+    const s = document.createElement('script');
+    s.id = 'gmaps-js';
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${KEY}`;
+    s.async = true;
+    s.onload = resolve;
+    document.head.appendChild(s);
   });
 }
 
@@ -57,7 +60,7 @@ export default function LocationConfirmModal() {
   const [searching,     setSearching]     = useState(false);
 
   const mapDivRef  = useRef(null);
-  const leafletRef = useRef(null);
+  const mapInstanceRef = useRef(null);
   const runOnce    = useRef(false);
 
   // ── Init on user login ──────────────────────────────────────────────────
@@ -136,43 +139,47 @@ export default function LocationConfirmModal() {
     setAddress([geo.city, geo.area, geo.pincode].filter(Boolean).join(', ') || 'Location not found');
   }
 
-  // ── Init Leaflet map ────────────────────────────────────────────────────
+  // ── Init Google Map ────────────────────────────────────────────────────
   useEffect(() => {
     if (phase !== 'map' || !mapDivRef.current) return;
-    if (leafletRef.current) return; // already initialised
+    if (mapInstanceRef.current) return; // already initialised
 
     (async () => {
-      const L = await loadLeaflet();
-      const map = L.map(mapDivRef.current, {
-        center: [lat || 13.6288, lng || 79.4192], // Fallback to Tirupati if GPS fails
+      await loadGoogleMaps();
+      if (!window.google?.maps) return;
+
+      const map = new window.google.maps.Map(mapDivRef.current, {
+        center: { lat: lat || 13.6288, lng: lng || 79.4192 }, // Fallback to Tirupati if GPS fails
         zoom: 15,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
         zoomControl: false,
-        attributionControl: false,
+        gestureHandling: 'greedy',
       });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
       // Reverse-geocode on every move end (pin stays fixed at center)
-      map.on('moveend', async () => {
+      map.addListener('idle', async () => {
         const c = map.getCenter();
-        setLat(c.lat); setLng(c.lng);
+        const newLat = c.lat();
+        const newLng = c.lng();
+        setLat(newLat); setLng(newLng);
         setAddress('Detecting…');
         try {
-          const geo = await reverseGeocode(c.lat, c.lng);
+          const geo = await reverseGeocode(newLat, newLng);
           applyGeo(geo);
         } catch { setAddress('Unknown location'); }
       });
 
-      leafletRef.current = map;
-      // Fix tile loading after modal render
-      setTimeout(() => map.invalidateSize(), 300);
+      mapInstanceRef.current = map;
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
   // ── Re-centre map when lat/lng initialise ──────────────────────────────
   useEffect(() => {
-    if (lat && lng && leafletRef.current) {
-      leafletRef.current.setView([lat, lng], 15);
+    if (lat && lng && mapInstanceRef.current) {
+      mapInstanceRef.current.panTo({ lat, lng });
     }
   }, [lat, lng]);
 
@@ -191,7 +198,7 @@ export default function LocationConfirmModal() {
   const pickResult = async (r) => {
     const rlat = parseFloat(r.lat), rlng = parseFloat(r.lon);
     setLat(rlat); setLng(rlng);
-    if (leafletRef.current) leafletRef.current.setView([rlat, rlng], 15);
+    if (mapInstanceRef.current) mapInstanceRef.current.panTo({ lat: rlat, lng: rlng });
     try { applyGeo(await reverseGeocode(rlat, rlng)); } catch {}
     setSearchQ(''); setSearchResults([]);
     setPhase('map');
@@ -213,7 +220,7 @@ export default function LocationConfirmModal() {
 
       if (clat && clng) {
         setLat(clat); setLng(clng);
-        if (leafletRef.current) leafletRef.current.setView([clat, clng], 15);
+        if (mapInstanceRef.current) mapInstanceRef.current.panTo({ lat: clat, lng: clng });
         applyGeo(await reverseGeocode(clat, clng));
       }
     } catch {
