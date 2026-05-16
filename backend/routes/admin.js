@@ -98,6 +98,35 @@ router.delete('/users/:id', adminProtect, async (req, res) => {
   }
 });
 
+// @POST /api/admin/users/bulk-action
+router.post('/users/bulk-action', adminProtect, async (req, res) => {
+  try {
+    const { userIds, action } = req.body;
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) return res.status(400).json({ message: 'No users selected' });
+    
+    if (action === 'ban') {
+      await User.updateMany({ _id: { $in: userIds } }, { isBanned: true });
+    } else if (action === 'unban') {
+      await User.updateMany({ _id: { $in: userIds } }, { isBanned: false });
+    } else if (action === 'delete') {
+      const users = await User.find({ _id: { $in: userIds } });
+      const deletedRecords = users.map(user => ({
+        type:     'user',
+        recordId: user._id.toString(),
+        name:     user.name,
+        phone:    user.phone,
+        city:     user.location?.city || '',
+      }));
+      await DeletedRecord.insertMany(deletedRecords);
+      await Ad.deleteMany({ userId: { $in: userIds } });
+      await User.deleteMany({ _id: { $in: userIds } });
+    }
+    res.json({ message: 'Bulk action successful' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // ===================== LOCATIONS =====================
 
 // @GET /api/admin/locations — users grouped by city with service status
@@ -258,6 +287,34 @@ router.delete('/ads/:id', adminProtect, async (req, res) => {
     }
     await Ad.findByIdAndDelete(req.params.id);
     res.json({ message: 'Ad deleted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @POST /api/admin/ads/bulk-action
+router.post('/ads/bulk-action', adminProtect, async (req, res) => {
+  try {
+    const { adIds, action } = req.body; // action: 'active', 'rejected', 'delete'
+    if (!adIds || !Array.isArray(adIds) || adIds.length === 0) return res.status(400).json({ message: 'No ads selected' });
+
+    if (action === 'delete') {
+      const ads = await Ad.find({ _id: { $in: adIds } }).populate('userId', 'name');
+      const records = ads.map(ad => ({
+        type:       'ad',
+        recordId:   ad._id.toString(),
+        title:      ad.title,
+        price:      ad.price,
+        category:   ad.category,
+        imageUrl:   ad.images?.[0] || '',
+        sellerName: ad.userId?.name || '',
+      }));
+      await DeletedRecord.insertMany(records);
+      await Ad.deleteMany({ _id: { $in: adIds } });
+    } else if (action === 'active' || action === 'rejected') {
+      await Ad.updateMany({ _id: { $in: adIds } }, { status: action });
+    }
+    res.json({ message: 'Bulk action successful' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

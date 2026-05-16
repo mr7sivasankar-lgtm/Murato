@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Ban, Trash2, CheckCircle, X, MapPin, Phone, MessageCircle } from 'lucide-react';
+import { Search, Ban, Trash2, CheckCircle, X, MapPin, Phone, MessageCircle, MoreVertical } from 'lucide-react';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../components/ConfirmModal';
@@ -15,6 +15,8 @@ export default function UsersTab() {
   const [userAds, setUserAds] = useState([]);
   const [dlLoading, setDlLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   useEffect(() => { fetchUsers(); }, [page]);
 
@@ -23,6 +25,7 @@ export default function UsersTab() {
     try {
       const { data } = await api.get('/admin/users', { params: { q, page, limit: 15 } });
       setUsers(data.users); setTotal(data.total);
+      setSelectedUsers([]);
     } catch { setUsers([]); } finally { setLoading(false); }
   };
 
@@ -48,9 +51,30 @@ export default function UsersTab() {
     try {
       await api.delete(`/admin/users/${id}`);
       setUsers(p => p.filter(u => u._id !== id));
+      setSelectedUsers(p => p.filter(uid => uid !== id));
       if (fromModal) setSelected(null);
       toast.success('User deleted');
     } catch { toast.error('Failed'); } finally { setDeleteTarget(null); }
+  };
+
+  const handleBulkAction = async (action) => {
+    if (selectedUsers.length === 0) return;
+    if (!window.confirm(`Are you sure you want to ${action} ${selectedUsers.length} users?`)) return;
+    setBulkLoading(true);
+    try {
+      await api.post('/admin/users/bulk-action', { userIds: selectedUsers, action });
+      toast.success(`Successfully applied ${action} to ${selectedUsers.length} users`);
+      fetchUsers();
+    } catch {
+      toast.error('Bulk action failed');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedUsers.length === users.length) setSelectedUsers([]);
+    else setSelectedUsers(users.map(u => u._id));
   };
 
   const pages = Math.ceil(total / 15);
@@ -76,7 +100,17 @@ export default function UsersTab() {
 
       <div className="table-wrap">
         <div className="table-header">
-          <h3>All Users</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <h3 style={{ margin: 0 }}>All Users</h3>
+            {selectedUsers.length > 0 && (
+              <div style={{ display: 'flex', gap: 8, background: 'var(--bg)', padding: '4px 12px', borderRadius: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{selectedUsers.length} selected</span>
+                <button className="btn btn-warning btn-sm" onClick={() => handleBulkAction('ban')} disabled={bulkLoading}>Ban</button>
+                <button className="btn btn-success btn-sm" onClick={() => handleBulkAction('unban')} disabled={bulkLoading}>Unban</button>
+                <button className="btn btn-danger btn-sm" onClick={() => handleBulkAction('delete')} disabled={bulkLoading}>Delete</button>
+              </div>
+            )}
+          </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <div className="search-input">
               <Search size={14} color="var(--text-muted)" />
@@ -89,12 +123,20 @@ export default function UsersTab() {
         {loading ? <div className="spinner" /> : (
           <table>
             <thead><tr>
+              <th style={{ width: 40 }}><input type="checkbox" checked={users.length > 0 && selectedUsers.length === users.length} onChange={toggleSelectAll} /></th>
               <th>User</th><th>Phone</th><th>Location</th><th>Status</th><th>Joined</th><th>Actions</th>
             </tr></thead>
             <tbody>
               {users.map(u => (
-                <tr key={u._id}>
-                  <td onClick={() => openDetails(u._id)} style={{ cursor: 'pointer' }}>
+                <tr key={u._id} onClick={() => openDetails(u._id)} style={{ cursor: 'pointer' }}>
+                  <td onClick={e => e.stopPropagation()}>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedUsers.includes(u._id)} 
+                      onChange={() => setSelectedUsers(prev => prev.includes(u._id) ? prev.filter(id => id !== u._id) : [...prev, u._id])} 
+                    />
+                  </td>
+                  <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       {avatar(u)}
                       <div>
@@ -107,11 +149,10 @@ export default function UsersTab() {
                   <td style={{ fontSize: 13 }}>{u.location?.city ? `${u.location.city}${u.location.area ? `, ${u.location.area}` : ''}` : '—'}</td>
                   <td><span className={`badge ${u.isBanned ? 'badge-banned' : 'badge-active'}`}>{u.isBanned ? 'Banned' : 'Active'}</span></td>
                   <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{new Date(u.createdAt).toLocaleDateString('en-IN')}</td>
-                  <td>
+                  <td onClick={e => e.stopPropagation()}>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button className={`btn btn-sm ${u.isBanned ? 'btn-success' : 'btn-warning'}`} onClick={() => toggleBan(u)}>
                         {u.isBanned ? <CheckCircle size={12} /> : <Ban size={12} />}
-                        {u.isBanned ? 'Unban' : 'Ban'}
                       </button>
                       <button className="btn btn-danger btn-sm" onClick={() => setDeleteTarget({ id: u._id, fromModal: false })}><Trash2 size={12} /></button>
                     </div>
