@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Users, CheckCircle, XCircle, X, Search } from 'lucide-react';
+import { Users, CheckCircle, XCircle, X, Search, FileText } from 'lucide-react';
+import UsersTab from './UsersTab';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
 
@@ -10,6 +11,7 @@ export default function LocationTab() {
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState(null);
 
   useEffect(() => { fetchLocations(); }, []);
 
@@ -50,11 +52,26 @@ export default function LocationTab() {
   const activeCount  = cityLocs.filter(l => l.isServiceActive).length;
   const blockedCount = cityLocs.filter(l => !l.isServiceActive).length;
   const totalUsers   = locations.reduce((s, l) => s + l.userCount, 0);
+  const totalAds     = locations.reduce((s, l) => s + (l.adCount || 0), 0);
   const maxUsers     = Math.max(...cityLocs.map(l => l.userCount), 1);
 
   const filtered = cityLocs.filter(l =>
     !search || l.city.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (selectedLocation) {
+    return (
+      <div style={{ animation: 'fadeIn 0.2s ease' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+          <button onClick={() => setSelectedLocation(null)} className="btn btn-ghost" style={{ padding: '8px 12px' }}>← Back to Locations</button>
+          <h2 style={{ margin: 0 }}>
+            Users in {selectedLocation === '__no_location__' ? 'No Location Set' : selectedLocation}
+          </h2>
+        </div>
+        <UsersTab locationFilter={selectedLocation} hideHeader={true} />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -64,6 +81,7 @@ export default function LocationTab() {
           { label: 'Active Locations',    value: activeCount,  color: '#dcfce7', tc: '#15803d', icon: '✅' },
           { label: 'Blocked Locations',   value: blockedCount, color: '#fee2e2', tc: '#b91c1c', icon: '🚫' },
           { label: 'Users with Location', value: totalUsers,   color: '#dbeafe', tc: '#1d4ed8', icon: '👥' },
+          { label: 'Ads with Location',   value: totalAds,     color: '#fef3c7', tc: '#b45309', icon: '📦' },
         ].map(s => (
           <div key={s.label} style={{ flex: 1, background: s.color, borderRadius: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
             <span style={{ fontSize: 28 }}>{s.icon}</span>
@@ -146,8 +164,8 @@ export default function LocationTab() {
               <div key="no-location" style={{
                 background: 'white', borderRadius: 16, padding: 20,
                 boxShadow: 'var(--shadow)', border: '2px dashed #cbd5e1',
-                position: 'relative', overflow: 'hidden',
-              }}>
+                position: 'relative', overflow: 'hidden', cursor: 'pointer',
+              }} onClick={() => setSelectedLocation('__no_location__')}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: 'linear-gradient(90deg,#94a3b8,#cbd5e1)' }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                   <div style={{ width: 42, height: 42, borderRadius: 12, background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>❓</div>
@@ -177,8 +195,8 @@ export default function LocationTab() {
                 background: 'white', borderRadius: 16, padding: 20,
                 boxShadow: 'var(--shadow)',
                 border: `2px solid ${loc.isServiceActive ? '#bbf7d0' : '#fecaca'}`,
-                transition: 'all 0.2s', position: 'relative', overflow: 'hidden',
-              }}>
+                transition: 'all 0.2s', position: 'relative', overflow: 'hidden', cursor: 'pointer'
+              }} onClick={() => setSelectedLocation(loc.city)}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: loc.isServiceActive ? 'linear-gradient(90deg,#10b981,#34d399)' : 'linear-gradient(90deg,#ef4444,#f87171)' }} />
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
@@ -192,7 +210,7 @@ export default function LocationTab() {
                     </div>
                   </div>
                   <button
-                    onClick={() => openToggle(loc)}
+                    onClick={(e) => { e.stopPropagation(); openToggle(loc); }}
                     className={`btn btn-sm ${loc.isServiceActive ? 'btn-danger' : 'btn-success'}`}
                     style={{ gap: 5 }}
                   >
@@ -215,6 +233,13 @@ export default function LocationTab() {
                     <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600 }}>
                       registered user{loc.userCount !== 1 ? 's' : ''} &nbsp;·&nbsp; {Math.round((loc.userCount / totalUsers) * 100) || 0}% of total
                     </div>
+                  </div>
+                  
+                  <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
+                      <FileText size={18} /> {loc.adCount || 0}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>ads posted</div>
                   </div>
                 </div>
 

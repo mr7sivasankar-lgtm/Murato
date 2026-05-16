@@ -4,7 +4,7 @@ import api from '../api/axios';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../components/ConfirmModal';
 
-export default function UsersTab() {
+export default function UsersTab({ locationFilter, hideHeader }) {
   const [users, setUsers] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -23,7 +23,7 @@ export default function UsersTab() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/admin/users', { params: { q, page, limit: 15 } });
+      const { data } = await api.get('/admin/users', { params: { q, location: locationFilter, page, limit: 15 } });
       setUsers(data.users); setTotal(data.total);
       setSelectedUsers([]);
     } catch { setUsers([]); } finally { setLoading(false); }
@@ -101,7 +101,7 @@ export default function UsersTab() {
       <div className="table-wrap">
         <div className="table-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <h3 style={{ margin: 0 }}>All Users</h3>
+            {!hideHeader && <h3 style={{ margin: 0 }}>All Users</h3>}
             {selectedUsers.length > 0 && (
               <div style={{ display: 'flex', gap: 8, background: 'var(--bg)', padding: '4px 12px', borderRadius: 8, alignItems: 'center' }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>{selectedUsers.length} selected</span>

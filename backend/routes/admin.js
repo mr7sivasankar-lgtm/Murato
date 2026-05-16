@@ -33,9 +33,20 @@ router.get('/stats', adminProtect, async (req, res) => {
 // @GET /api/admin/users
 router.get('/users', adminProtect, async (req, res) => {
   try {
-    const { q, page = 1, limit = 20 } = req.query;
+    const { q, location, page = 1, limit = 20 } = req.query;
     const filter = { phone: { $ne: 'admin-internal' } };
     if (q) filter.$or = [{ name: new RegExp(q, 'i') }, { phone: new RegExp(q, 'i') }];
+    if (location) {
+      if (location === '__no_location__') {
+        filter.$or = (filter.$or || []).concat([{ 'location.city': '' }, { 'location.city': { $exists: false } }]);
+        // If there was a q filter, the above structure might be tricky, let's keep it simple:
+        filter['location.city'] = { $in: ['', null] };
+      } else {
+        const [city, pin] = location.split(' - ');
+        filter['location.city'] = city.trim();
+        if (pin) filter['location.pincode'] = pin.trim();
+      }
+    }
 
     const skip = (Number(page) - 1) * Number(limit);
     const total = await User.countDocuments(filter);
@@ -136,9 +147,18 @@ router.get('/locations', adminProtect, async (req, res) => {
     const cityGroups = await User.aggregate([
       { $match: { phone: { $ne: 'admin-internal' }, 'location.city': { $ne: '' } } },
       {
+        $lookup: {
+          from: 'ads',
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'userAds'
+        }
+      },
+      {
         $group: {
           _id: { city: '$location.city', pincode: '$location.pincode' },
           userCount:   { $sum: 1 },
+          adCount:     { $sum: { $size: '$userAds' } },
           activeCount: { $sum: { $cond: [{ $eq: ['$isBanned', false] }, 1, 0] } },
           bannedCount: { $sum: { $cond: [{ $eq: ['$isBanned', true]  }, 1, 0] } },
         }
@@ -164,6 +184,7 @@ router.get('/locations', adminProtect, async (req, res) => {
       return {
         city:            displayLabel, // Use combined label as the ID for toggling
         userCount:       g.userCount,
+        adCount:         g.adCount,
         activeCount:     g.activeCount,
         bannedCount:     g.bannedCount,
         isServiceActive: serviceMap[displayLabel]?.isActive ?? true,
@@ -178,6 +199,7 @@ router.get('/locations', adminProtect, async (req, res) => {
       result.push({
         city:            '__no_location__',
         userCount:       noLocationCount,
+        adCount:         0,
         activeCount:     noLocationCount,
         bannedCount:     0,
         isServiceActive: true,
