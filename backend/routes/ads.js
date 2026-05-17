@@ -243,10 +243,11 @@ router.put('/:id', protect, upload.array('images', 5), async (req, res) => {
 
     if (req.body.skills) ad.skills = req.body.skills.split(',').map(s => s.trim()).filter(Boolean);
 
-    if (req.body.city || req.body.area) {
+    // Always update location fields when any location data is provided
+    if (req.body.city || req.body.area || (req.body.lat && req.body.lng)) {
       ad.location = {
-        city:        req.body.city || ad.location.city,
-        area:        req.body.area || ad.location.area,
+        city:        req.body.city  || ad.location.city,
+        area:        req.body.area  || ad.location.area,
         coordinates: req.body.lng && req.body.lat
           ? [parseFloat(req.body.lng), parseFloat(req.body.lat)]
           : ad.location.coordinates,

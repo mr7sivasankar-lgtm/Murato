@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Camera, X, MapPin, Navigation,
@@ -12,6 +12,62 @@ import MapPinPicker from '../components/MapPinPicker';
 import CropModal from '../components/CropModal';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
+
+const SVC_CATS = [
+  { name: 'Mason', icon: '🧱' },
+  { name: 'Contractor', icon: '🏗️' },
+  { name: 'Carpenter', icon: '🪵' },
+  { name: 'Electrician', icon: '⚡' },
+  { name: 'Plumber', icon: '🔧' },
+  { name: 'Painter', icon: '🎨' },
+  { name: 'Tile Worker', icon: '🏠' },
+  { name: 'Welder', icon: '🔩' },
+  { name: 'Labor / Helpers', icon: '👷' },
+  { name: 'Interior Designer', icon: '🛋️' },
+  { name: 'Architect', icon: '📐' },
+  { name: 'Fabricator', icon: '⚙️' },
+  { name: 'Machines & Equipment', icon: '🚜' },
+];
+
+const SVC_TITLES = {
+  'Mason': 'Experienced Mason for Construction Work',
+  'Contractor': 'Professional Building Contractor Services',
+  'Carpenter': 'Expert Carpentry & Woodwork Services',
+  'Electrician': 'Home Electrical Repair & Installation',
+  'Plumber': 'Professional Plumbing Services',
+  'Painter': 'Professional Painting Services',
+  'Tile Worker': 'Expert Tile Fixing & Flooring Work',
+  'Welder': 'Professional Welding & Fabrication Work',
+  'Labor / Helpers': 'Skilled Labor & Helper Services',
+  'Interior Designer': 'Creative Interior Design Services',
+  'Architect': 'Professional Architecture & Design Services',
+  'Fabricator': 'Expert Steel Fabrication Services',
+  'Machines & Equipment': 'Construction Machines & Equipment Rental',
+};
+
+// ── Add Custom Category ────────────────────────────────────────────────────
+const AddCustomCategory = ({ selected, onChange }) => {
+  const [val, setVal] = useState('');
+  const add = () => {
+    const t = val.trim();
+    if (!t || selected.includes(t)) return;
+    onChange([...selected, t]);
+    setVal('');
+  };
+  return (
+    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+      <input
+        className="form-input"
+        style={{ flex: 1, padding: '8px 12px', fontSize: 13 }}
+        placeholder="Custom category..."
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), add())}
+      />
+      <button type="button" onClick={add} style={{ padding: '8px 14px', background: 'var(--navy)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>Add</button>
+    </div>
+  );
+};
 
 // ── Toggle ──────────────────────────────────────────────────────────────────
 const Toggle = ({ value, onChange, label }) => (
@@ -199,6 +255,13 @@ export default function SellPage() {
   const pSet = (k, v) => setPForm(f => ({ ...f, [k]: v }));
   const sSet = (k, v) => setSForm(f => ({ ...f, [k]: v }));
 
+  // Auto-detect location when form type is selected (if no location yet)
+  useEffect(() => {
+    if (!adType) return;
+    const f = adType === 'product' ? pForm : sForm;
+    if (!f.lat) detectLocation();
+  }, [adType]);
+
   // ── Image handling — open crop modal for each selected file ────────────────
   const openCropFlow = (files) => {
     const remaining = 5 - images.length;
@@ -240,7 +303,7 @@ export default function SellPage() {
   };
 
   // ── GPS detect location — Capacitor Geolocation for Android permissions ──
-  const detectGPS = async () => {
+  const detectLocation = async () => {
     setDetecting(true);
     try {
       let lat, lng;
@@ -295,7 +358,7 @@ export default function SellPage() {
     if (adType === 'product' && !pForm.category) { toast.error('Category is required'); return; }
     if (adType === 'service' && !sForm.categories.length) { toast.error('Select at least one service category'); return; }
     if (!form.price)        { toast.error('Price is required'); return; }
-    if (!form.city.trim())  { toast.error('City is required'); return; }
+    if (!form.city.trim() || !form.lat) { toast.error('Location is required. Tap "My Current Location"'); return; }
 
     try {
       setSubmitting(true);
@@ -313,8 +376,8 @@ export default function SellPage() {
       if (adType === 'service' && sForm.subcategories.length)
         fd.set('subcategory', sForm.subcategories[0]);
       // Primary category for service
-      if (adType === 'service' && sForm.categories.length)
-        fd.set('category', sForm.categories[0]);
+      if (!isProduct && sForm.categories.length) fd.set('category', sForm.categories[0]);
+      fd.set('serviceRadius', '15'); // Fixed 15km radius
 
       const existingImages = [];
       images.forEach(item => {
@@ -452,10 +515,13 @@ export default function SellPage() {
 
         {/* Basic Details */}
         <Section title={t('basicDetails')} icon="📝">
-          <div className="form-group">
-            <label className="form-label">{isProduct ? 'Product Title *' : 'Service Title *'}</label>
-            <input className="form-input" placeholder={isProduct ? 'e.g., UltraTech OPC Cement — 50kg bags' : 'e.g., Experienced Mason for House Construction'} value={form.title} onChange={e => fSet('title', e.target.value)} />
-          </div>
+          {/* Product: title first | Service: categories first then auto-filled title */}
+          {isProduct && (
+            <div className="form-group">
+              <label className="form-label">Product Title *</label>
+              <input className="form-input" placeholder="e.g., UltraTech OPC Cement — 50kg bags" value={form.title} onChange={e => fSet('title', e.target.value)} />
+            </div>
+          )}
 
           {/* Product: single category dropdown | Service: multi-chip grid */}
           {isProduct ? (
@@ -476,9 +542,9 @@ export default function SellPage() {
             </>
           ) : (
             <div className="form-group">
-              <label className="form-label">Service Categories * (select all you offer)</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {SERVICE_CATEGORIES.map(cat => {
+              <label className="form-label">Service Category * <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(select all that apply)</span></label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                {SVC_CATS.map(cat => {
                   const sel = sForm.categories.includes(cat.name);
                   return (
                     <button key={cat.name} type="button"
@@ -487,20 +553,37 @@ export default function SellPage() {
                           ? sForm.categories.filter(c => c !== cat.name)
                           : [...sForm.categories, cat.name];
                         sSet('categories', next);
-                        sSet('subcategories', []);
+                        // Auto-fill title when first category selected
+                        if (!sel && !sForm.title && SVC_TITLES[cat.name])
+                          sSet('title', SVC_TITLES[cat.name]);
                       }}
-                      style={{ padding: '7px 12px', borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, border: `1.5px solid ${sel ? 'var(--navy)' : 'var(--border)'}`, background: sel ? '#f0f3fc' : 'white', color: sel ? 'var(--navy)' : 'var(--text-secondary)' }}
+                      style={{ padding: '8px 13px', borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, border: `1.5px solid ${sel ? 'var(--navy)' : 'var(--border)'}`, background: sel ? '#f0f3fc' : 'white', color: sel ? 'var(--navy)' : 'var(--text-secondary)' }}
                     >
-                      {cat.icon || cat.emoji || ''} {cat.name}
+                      {sel && <Check size={11} />} {cat.icon} {cat.name}
                     </button>
                   );
                 })}
               </div>
+              {/* Custom add */}
+              <AddCustomCategory
+                selected={sForm.categories}
+                onChange={v => sSet('categories', v)}
+              />
             </div>
           )}
 
-          {/* Subcategories for all selected categories */}
-          {(isProduct ? pSubcats : sSubcats).length > 0 && (
+          {/* Service title — shown after categories, auto-filled */}
+          {!isProduct && (
+            <div className="form-group">
+              <label className="form-label">Service Title *
+                <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11 }}> (auto-filled, you can edit)</span>
+              </label>
+              <input className="form-input" placeholder="e.g., Experienced Mason for Construction Work" value={sForm.title} onChange={e => sSet('title', e.target.value)} />
+            </div>
+          )}
+
+
+          {isProduct && pSubcats.length > 0 && (
             <CheckboxGrid
               label={isProduct ? t('subcategoriesLabel') : t('workTypesLabel')}
               options={isProduct ? pSubcats : sSubcats}
@@ -510,13 +593,13 @@ export default function SellPage() {
             />
           )}
 
-          {/* Item types — multi-select */}
-          {(isProduct ? pTypes : sTypes).length > 0 && (
+          {/* Item types — product only */}
+          {isProduct && pTypes.length > 0 && (
             <CheckboxGrid
               label={isProduct ? t('specificTypesLabel') : t('specificDetailsLabel')}
-              options={isProduct ? pTypes : sTypes}
-              selected={form.itemTypes}
-              onChange={v => fSet('itemTypes', v)}
+              options={pTypes}
+              selected={pForm.itemTypes}
+              onChange={v => pSet('itemTypes', v)}
               allowOther
             />
           )}
@@ -617,53 +700,21 @@ export default function SellPage() {
         {/* ── Service sections ── */}
         {!isProduct && (
           <>
-            <Section title={t('experience')} icon="💼">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div className="form-group">
-                  <label className="form-label">Experience (Years)</label>
-                  <input className="form-input" type="number" placeholder="e.g., 5" value={sForm.experienceYears} onChange={e => sSet('experienceYears', e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Team Size</label>
-                  <input className="form-input" type="number" placeholder="1" value={sForm.teamSize} onChange={e => sSet('teamSize', e.target.value)} />
-                </div>
-              </div>
+            <Section title="Experience" icon="💼">
               <div className="form-group">
-                <label className="form-label">Projects Completed</label>
-                <input className="form-input" type="number" placeholder="e.g., 50" value={sForm.projectsDone} onChange={e => sSet('projectsDone', e.target.value)} />
+                <label className="form-label">Experience (Years) <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span></label>
+                <input className="form-input" type="number" placeholder="e.g., 5" value={sForm.experienceYears} onChange={e => sSet('experienceYears', e.target.value)} />
               </div>
             </Section>
 
             <Section title={t('pricing')} icon="💰">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <CatSelect label="Pricing Type" value={sForm.pricingType} onChange={v => sSet('pricingType', v)} options={['per_day','per_hour','per_sqft','per_project','fixed'].map(p => ({ name: p, label: PRICE_TYPE_LABELS[p] || p }))} placeholder="Type" />
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Rate (₹)</label>
+                  <label className="form-label">Rate (₹) *</label>
                   <input className="form-input" type="number" placeholder="₹" value={sForm.price} onChange={e => sSet('price', e.target.value)} />
                 </div>
               </div>
-              <Toggle value={sForm.negotiable} onChange={v => sSet('negotiable', v)} label="Negotiable" />
-            </Section>
-
-            <Section title={t('availability')} icon="📅">
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                {[
-                  { value: 'available', label: '✅ Available Now', color: '#10b981' },
-                  { value: 'busy', label: '🔴 Busy', color: '#ef4444' },
-                  { value: 'from_date', label: '📅 Available From', color: '#f5c518' },
-                ].map(opt => (
-                  <button key={opt.value} type="button" onClick={() => sSet('availability', opt.value)} style={{ padding: '8px 14px', borderRadius: 20, border: `2px solid ${sForm.availability === opt.value ? opt.color : 'var(--border)'}`, background: sForm.availability === opt.value ? opt.color + '18' : 'white', fontSize: 12, fontWeight: 600, color: sForm.availability === opt.value ? opt.color : 'var(--text-secondary)', cursor: 'pointer' }}>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              <div className="form-group">
-                <label className="form-label">Service Radius (km)</label>
-                <input className="form-input" type="number" placeholder="20" value={sForm.serviceRadius} onChange={e => sSet('serviceRadius', e.target.value)} />
-              </div>
-              <Toggle value={sForm.travelAvailable} onChange={v => sSet('travelAvailable', v)} label="Ready to Travel" />
-              <Toggle value={sForm.materialIncluded} onChange={v => sSet('materialIncluded', v)} label="Material Included in Price" />
-              <Toggle value={sForm.urgentWork} onChange={v => sSet('urgentWork', v)} label="Urgent Work Accepted" />
             </Section>
           </>
         )}
@@ -671,10 +722,10 @@ export default function SellPage() {
         {/* Location — GPS + Search + Map pin */}
         <Section title={t('location')} icon="📍">
           <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-            <button type="button" onClick={detectGPS} disabled={detecting}
+            <button type="button" onClick={detectLocation} disabled={detecting}
               style={{ flex: 1, minWidth: 90, padding: '10px 8px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'white', color: 'var(--navy)', fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}
             >
-              <Navigation size={13} /> {detecting ? 'Detecting...' : 'GPS'}
+              <Navigation size={13} /> {detecting ? 'Detecting...' : 'My Current Location'}
             </button>
             <button type="button" onClick={() => setShowLocPicker(true)}
               style={{ flex: 1, minWidth: 90, padding: '10px 8px', borderRadius: 10, border: '1.5px solid var(--border)', background: 'white', color: '#e87e04', fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}
@@ -688,13 +739,13 @@ export default function SellPage() {
             </button>
           </div>
 
-          {/* Current detected location */}
           {form.city && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f0f3fc', borderRadius: 10, padding: '10px 14px', marginBottom: 12 }}>
               <MapPin size={14} color="var(--navy)" />
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--navy)' }}>
                 {form.city}{form.area ? `, ${form.area}` : ''}
               </span>
+              {form.lat && <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, color: '#10b981', background: '#dcfce7', padding: '2px 8px', borderRadius: 20 }}>✓ GPS Confirmed</span>}
             </div>
           )}
 
@@ -717,37 +768,6 @@ export default function SellPage() {
             <input className="form-input" placeholder="Your business or your name" value={form.businessName} onChange={e => fSet('businessName', e.target.value)} />
           </div>
 
-          {/* Languages */}
-          <div className="form-group">
-            <label className="form-label">🗣️ Languages You Speak</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {LANGUAGE_OPTIONS.map(lang => {
-                const sel = (form.languages || []).includes(lang);
-                return (
-                  <button
-                    key={lang}
-                    type="button"
-                    onClick={() => {
-                      const next = sel
-                        ? form.languages.filter(l => l !== lang)
-                        : [...(form.languages || []), lang];
-                      fSet('languages', next);
-                    }}
-                    style={{
-                      padding: '7px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
-                      border: `1.5px solid ${sel ? 'var(--navy)' : 'var(--border)'}`,
-                      background: sel ? '#f0f3fc' : 'white',
-                      color: sel ? 'var(--navy)' : 'var(--text-secondary)',
-                    }}
-                  >
-                    {sel && <Check size={11} />} {lang}
-                  </button>
-                );
-              })}
-            </div>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>Helps buyers contact you in their preferred language</p>
-          </div>
 
           {/* Contact options — independent checkboxes */}
           <div className="form-group">

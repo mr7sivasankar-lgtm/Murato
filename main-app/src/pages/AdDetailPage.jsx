@@ -10,6 +10,16 @@ import { useAuth } from '../context/AuthContext';
 import { PRICE_TYPE_LABELS, UNIT_LABELS } from '../data/categories';
 import toast from 'react-hot-toast';
 
+const CAT_ICONS = {
+  'Cement':'🧱','Steel':'🔩','Bricks & Blocks':'🏗️','Sand & Aggregates':'🏖️',
+  'Tiles & Flooring':'🪟','Electrical':'⚡','Plumbing':'🔧','Paint & Chemicals':'🎨',
+  'Wood & Plywood':'🪵','Tools & Equipment':'🛠️','Doors & Windows':'🚪','Crushed Stones':'🪨',
+  'Mason':'🧱','Mason (Mestri)':'🧱','Contractor':'🏗️','Carpenter':'🪵',
+  'Electrician':'⚡','Plumber':'🔧','Painter':'🎨','Tile Worker':'🏠',
+  'Welder':'🔩','Labor / Helpers':'👷','Interior Designer':'🛋️',
+  'Architect':'📐','Fabricator':'⚙️','Machines & Equipment':'🚜',
+};
+
 function InfoRow({ icon, label, value }) {
   if (!value) return null;
   return (
@@ -96,7 +106,7 @@ export default function AdDetailPage() {
           <img src={ad.images[imgIdx]} alt={ad.title} style={{ width: '100%', height: 300, objectFit: 'cover' }} />
         ) : (
           <div style={{ width: '100%', height: 300, background: 'linear-gradient(135deg, #e8edf5, #d1d9ef)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 80 }}>
-            {isService ? '🔧' : '📦'}
+            {CAT_ICONS[ad.category] || (isService ? '🔧' : '📦')}
           </div>
         )}
         {ad.images?.length > 1 && (

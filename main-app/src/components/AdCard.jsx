@@ -11,11 +11,16 @@ const CAT_ICONS = {
   'Sand & Aggregates': '🏖️', 'Tiles & Flooring': '🪟', 'Electrical': '⚡',
   'Plumbing': '🔧', 'Paint & Chemicals': '🎨', 'Wood & Plywood': '🪵',
   'Tools & Equipment': '🛠️', 'Doors & Windows': '🚪', 'Crushed Stones': '🪨',
-  'Mason (Mestri)': '👷', 'Contractor': '🏗️', 'Carpenter': '🪵',
+  // Long names (legacy)
+  'Mason (Mestri)': '🧱', 'Contractor': '🏗️', 'Carpenter': '🪵',
   'Electrician': '⚡', 'Plumber': '🔧', 'Painter': '🎨',
   'Tile Worker': '🏠', 'Welder': '🔩', 'Labor / Helpers': '👷',
   'Interior Designer': '🛋️', 'Architect': '📐', 'Fabricator': '⚙️',
+  'Machines & Equipment': '🚜',
+  // Short names (new form)
+  'Mason': '🧱',
 };
+
 
 // Haversine distance in km between two [lng, lat] coordinate pairs
 function distKm(c1, c2) {
