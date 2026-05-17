@@ -45,6 +45,22 @@ const SVC_TITLES = {
   'Machines & Equipment': 'Construction Machines & Equipment Rental',
 };
 
+const CAT_UNIT = {
+  'Cement':           'per_bag',
+  'Steel':            'per_ton',
+  'Bricks & Blocks':  'per_load',
+  'Sand & Aggregates':'per_load',
+  'Tiles & Flooring': 'per_sqft',
+  'Electrical':       'per_piece',
+  'Plumbing':         'per_piece',
+  'Paint & Chemicals':'per_litre',
+  'Wood & Plywood':   'per_piece',
+  'Tools & Equipment':'fixed',
+  'Doors & Windows':  'per_piece',
+  'Crushed Stones':   'per_load',
+};
+
+
 // ── Add Custom Category ────────────────────────────────────────────────────
 const AddCustomCategory = ({ selected, onChange }) => {
   const [val, setVal] = useState('');
@@ -356,9 +372,12 @@ export default function SellPage() {
     const form = adType === 'product' ? pForm : sForm;
     if (!form.title.trim()) { toast.error('Title is required'); return; }
     if (adType === 'product' && !pForm.category) { toast.error('Category is required'); return; }
+    if (adType === 'product' && !pForm.brand.trim()) { toast.error('Brand is required'); return; }
+    if (adType === 'product' && !images.length) { toast.error('At least 1 photo is required'); return; }
     if (adType === 'service' && !sForm.categories.length) { toast.error('Select at least one service category'); return; }
     if (!form.price)        { toast.error('Price is required'); return; }
     if (!form.city.trim() || !form.lat) { toast.error('Location is required. Tap "My Current Location"'); return; }
+
 
     try {
       setSubmitting(true);
@@ -510,7 +529,7 @@ export default function SellPage() {
               </button>
             </div>
           )}
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>Up to 5 photos · First photo is cover · Tap to crop</p>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>{isProduct ? 'Required · 1 to 5 photos · First photo is cover' : 'Optional · Up to 5 photos · First photo is cover · Tap to crop'}</p>
         </Section>
 
         {/* Basic Details */}
@@ -529,7 +548,12 @@ export default function SellPage() {
               <CatSelect
                 label={`${t('categoryLabel')} *`}
                 value={pForm.category}
-                onChange={v => { pSet('category', v); pSet('subcategories', []); }}
+                onChange={v => {
+                  pSet('category', v);
+                  pSet('subcategories', []);
+                  // Auto-set price unit from category
+                  if (CAT_UNIT[v]) pSet('priceType', CAT_UNIT[v]);
+                }}
                 options={PRODUCT_CATEGORIES}
                 placeholder={t('selectCategory')}
               />
@@ -611,7 +635,7 @@ export default function SellPage() {
             <Section title="Product Details" icon="📦">
               {/* Brand — FREE TEXT input + optional suggestions */}
               <div className="form-group">
-                <label className="form-label">{t('brandLabel')}</label>
+                <label className="form-label">Brand *</label>
                 <input
                   className="form-input"
                   placeholder="e.g., UltraTech, TATA, Bosch, or your brand"
@@ -634,12 +658,6 @@ export default function SellPage() {
                 )}
                 <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Quick select above or type your own brand name</p>
               </div>
-
-              <div className="form-group">
-                <label className="form-label">{t('materialTypeLabel')}</label>
-                <input className="form-input" placeholder="e.g., OPC 43 Grade, Fe-500, 6mm thick" value={pForm.materialType} onChange={e => pSet('materialType', e.target.value)} />
-              </div>
-
               <div className="form-group">
                 <label className="form-label">{t('conditionLabel')}</label>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -667,32 +685,13 @@ export default function SellPage() {
             </Section>
 
             <Section title={t('pricing')} icon="💰">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Price *</label>
                   <input className="form-input" type="number" placeholder="₹" value={pForm.price} onChange={e => pSet('price', e.target.value)} />
                 </div>
                 <CatSelect label="Per" value={pForm.priceType} onChange={v => pSet('priceType', v)} options={['per_bag','per_ton','per_kg','per_piece','per_sqft','per_load','per_litre','fixed'].map(p => ({ name: p, label: PRICE_TYPE_LABELS[p] || p }))} placeholder="Per" />
               </div>
-              <Toggle value={pForm.negotiable} onChange={v => pSet('negotiable', v)} label="Price Negotiable" />
-              <Toggle value={pForm.bulkDiscount} onChange={v => pSet('bulkDiscount', v)} label="Bulk Discount Available" />
-            </Section>
-
-            <Section title={t('deliveryOptions')} icon="🚚">
-              <Toggle value={pForm.deliveryAvailable} onChange={v => pSet('deliveryAvailable', v)} label="Delivery Available" />
-              {pForm.deliveryAvailable && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Delivery Charges (₹)</label>
-                    <input className="form-input" type="number" placeholder="0 = Free" value={pForm.deliveryCharges} onChange={e => pSet('deliveryCharges', e.target.value)} />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Delivery Time</label>
-                    <input className="form-input" placeholder="e.g., 2 days" value={pForm.deliveryTime} onChange={e => pSet('deliveryTime', e.target.value)} />
-                  </div>
-                </div>
-              )}
-              <Toggle value={pForm.pickupAvailable} onChange={v => pSet('pickupAvailable', v)} label="Pickup Available" />
             </Section>
           </>
         )}
