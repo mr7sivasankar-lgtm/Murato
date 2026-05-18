@@ -740,19 +740,7 @@ export default function SellPage() {
               </div>
             </Section>
 
-            <Section title={t('availability')} icon="📊">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Quantity Available</label>
-                  <input className="form-input" type="number" placeholder="e.g., 500" value={pForm.quantity} onChange={e => pSet('quantity', e.target.value)} />
-                </div>
-                <CatSelect label="Unit" value={pForm.unit} onChange={v => pSet('unit', v)} options={(selectedPCat?.units || ['bag','ton','kg','piece']).map(u => ({ name: u, label: UNIT_LABELS[u] || u }))} placeholder="Unit" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Minimum Order Qty (MOQ)</label>
-                <input className="form-input" type="number" placeholder="1" value={pForm.moq} onChange={e => pSet('moq', e.target.value)} />
-              </div>
-            </Section>
+
 
             <Section title={t('pricing')} icon="💰">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
