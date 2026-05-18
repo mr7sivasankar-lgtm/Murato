@@ -391,7 +391,6 @@ export default function SellPage() {
     const form = adType === 'product' ? pForm : sForm;
     if (!form.title.trim()) { toast.error('Title is required'); return; }
     if (adType === 'product' && !pForm.category) { toast.error('Category is required'); return; }
-    if (adType === 'product' && !pForm.brand.trim()) { toast.error('Brand is required'); return; }
     // Photo is NOT strictly required — if user skipped, the category default image is used automatically
     if (adType === 'service' && !sForm.categories.length) { toast.error('Select at least one service category'); return; }
     if (!form.price)        { toast.error('Price is required'); return; }
@@ -623,6 +622,8 @@ export default function SellPage() {
                   pSet('subcategories', []);
                   // Auto-set price unit from category
                   if (CAT_UNIT[v]) pSet('priceType', CAT_UNIT[v]);
+                  // Auto-populate product title with category name (editable)
+                  if (v) pSet('title', v);
                 }}
                 options={PRODUCT_CATEGORIES}
                 placeholder={t('selectCategory')}
@@ -687,16 +688,7 @@ export default function SellPage() {
             />
           )}
 
-          {/* Item types — product only */}
-          {isProduct && pTypes.length > 0 && (
-            <CheckboxGrid
-              label={isProduct ? t('specificTypesLabel') : t('specificDetailsLabel')}
-              options={pTypes}
-              selected={pForm.itemTypes}
-              onChange={v => pSet('itemTypes', v)}
-              allowOther
-            />
-          )}
+
         </Section>
 
         {/* ── Product sections ── */}
@@ -705,7 +697,7 @@ export default function SellPage() {
             <Section title="Product Details" icon="📦">
               {/* Brand — FREE TEXT input + optional suggestions */}
               <div className="form-group">
-                <label className="form-label">Brand *</label>
+                <label className="form-label">Brand <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11 }}>(optional)</span></label>
                 <input
                   className="form-input"
                   placeholder="e.g., UltraTech, TATA, Bosch, or your brand"
