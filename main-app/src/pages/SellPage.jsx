@@ -61,6 +61,25 @@ const CAT_UNIT = {
 };
 
 
+// ── Default Ad Images per Product Category ──────────────────────────────────
+// These images show as a placeholder in the Photos section when the seller
+// has not uploaded their own product photo. They will be used as the ad image
+// if the seller proceeds without uploading a custom photo.
+const CATEGORY_AD_DEFAULTS = {
+  'Cement':            '/ad-defaults/cement.png',
+  'Steel':             '/ad-defaults/steel.png',
+  'Bricks & Blocks':   '/ad-defaults/bricks.png',
+  'Sand & Aggregates': '/ad-defaults/sand.png',
+  'Tiles & Flooring':  '/ad-defaults/tiles.png',
+  'Electrical':        '/ad-defaults/electrical.png',
+  'Plumbing':          '/ad-defaults/plumbing.png',
+  'Paint & Chemicals': '/ad-defaults/paint.png',
+  'Wood & Plywood':    '/ad-defaults/wood-plywood.png',
+  'Tools & Equipment': '/ad-defaults/tools-equipment.png',
+  'Doors & Windows':   '/ad-defaults/doors-windows.png',
+  'Crushed Stones':    '/ad-defaults/crushed-stones.png',
+};
+
 // ── Add Custom Category ────────────────────────────────────────────────────
 const AddCustomCategory = ({ selected, onChange }) => {
   const [val, setVal] = useState('');
@@ -373,7 +392,7 @@ export default function SellPage() {
     if (!form.title.trim()) { toast.error('Title is required'); return; }
     if (adType === 'product' && !pForm.category) { toast.error('Category is required'); return; }
     if (adType === 'product' && !pForm.brand.trim()) { toast.error('Brand is required'); return; }
-    if (adType === 'product' && !images.length) { toast.error('At least 1 photo is required'); return; }
+    // Photo is NOT strictly required — if user skipped, the category default image is used automatically
     if (adType === 'service' && !sForm.categories.length) { toast.error('Select at least one service category'); return; }
     if (!form.price)        { toast.error('Price is required'); return; }
     if (!form.city.trim() || !form.lat) { toast.error('Location is required. Tap "My Current Location"'); return; }
@@ -404,8 +423,17 @@ export default function SellPage() {
         else if (item.isExisting) existingImages.push(item.preview);
       });
 
+      // If no custom photos uploaded, use the category default image as the ad image
+      if (images.length === 0 && adType === 'product') {
+        const defImg = CATEGORY_AD_DEFAULTS[pForm.category];
+        if (defImg) existingImages.push(defImg);
+      }
+
       if (editAd) {
         fd.append('replaceImages', 'true');
+        fd.append('existingImages', JSON.stringify(existingImages));
+      } else if (existingImages.length > 0) {
+        // Send default image URL for new ads when no file was uploaded
         fd.append('existingImages', JSON.stringify(existingImages));
       }
 
@@ -476,6 +504,10 @@ export default function SellPage() {
   const form = isProduct ? pForm : sForm;
   const fSet = isProduct ? pSet : sSet;
 
+  // Default ad image — shown when no custom photo uploaded and a category is selected
+  const defaultAdImage = isProduct && pForm.category ? CATEGORY_AD_DEFAULTS[pForm.category] : null;
+  const hasCustomImages = images.length > 0;
+
   // ── Main form ─────────────────────────────────────────────────────────────
   return (
     <div className="page page-enter" style={{ paddingBottom: 100, background: 'var(--bg)' }}>
@@ -502,19 +534,48 @@ export default function SellPage() {
           <input ref={fileRef}   type="file" accept="image/*" multiple capture={undefined} style={{ display: 'none' }} onChange={handleImages} />
           <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleCamera} />
 
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {images.map((img, i) => (
-              <div key={i} style={{ position: 'relative', width: 80, height: 80 }}>
-                <img src={img.preview} alt="" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 10 }} />
-                <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: -6, right: -6, background: '#ef4444', border: 'none', borderRadius: '50%', width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white' }}>
-                  <X size={12} />
-                </button>
+          {/* ── Default image preview (shown only when no custom photo uploaded) ── */}
+          {isProduct && defaultAdImage && !hasCustomImages && (
+            <div style={{ marginBottom: 12 }}>
+              {/* Info badge */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fffbeb', border: '1.5px solid #fbbf24', borderRadius: 10, padding: '8px 12px', marginBottom: 10 }}>
+                <span style={{ fontSize: 16 }}>🖼️</span>
+                <div>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#92400e', margin: 0 }}>Default product image will be used</p>
+                  <p style={{ fontSize: 11, color: '#b45309', margin: 0 }}>Upload your own photo below to replace this</p>
+                </div>
               </div>
-            ))}
-          </div>
+              {/* Default image thumbnail */}
+              <div style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'hidden', border: '2px dashed #fbbf24' }}>
+                <img
+                  src={defaultAdImage}
+                  alt={`Default ${pForm.category} image`}
+                  style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block', opacity: 0.88 }}
+                />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.55))', padding: '20px 12px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>📦 {pForm.category} — Default Image</span>
+                  <span style={{ background: '#fbbf24', color: '#78350f', fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 20 }}>DEFAULT</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Custom uploaded images */}
+          {hasCustomImages && (
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+              {images.map((img, i) => (
+                <div key={i} style={{ position: 'relative', width: 80, height: 80 }}>
+                  <img src={img.preview} alt="" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 10 }} />
+                  <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: -6, right: -6, background: '#ef4444', border: 'none', borderRadius: '50%', width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white' }}>
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           {images.length < 5 && (
-            <div style={{ display: 'flex', gap: 10, marginTop: images.length ? 10 : 0 }}>
+            <div style={{ display: 'flex', gap: 10, marginTop: hasCustomImages ? 0 : 0 }}>
               {/* Gallery picker */}
               <button onClick={() => fileRef.current?.click()}
                 style={{ flex: 1, height: 72, borderRadius: 12, border: '2px dashed var(--border)', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, cursor: 'pointer', color: 'var(--text-muted)' }}>
@@ -529,7 +590,16 @@ export default function SellPage() {
               </button>
             </div>
           )}
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>{isProduct ? 'Required · 1 to 5 photos · First photo is cover' : 'Optional · Up to 5 photos · First photo is cover · Tap to crop'}</p>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
+            {isProduct
+              ? hasCustomImages
+                ? `${images.length}/5 photos added · First photo is cover`
+                : defaultAdImage
+                  ? '✅ Default image ready · Or add your own photo above (up to 5)'
+                  : 'Add up to 5 photos · First photo is cover'
+              : 'Optional · Up to 5 photos · First photo is cover · Tap to crop'
+            }
+          </p>
         </Section>
 
         {/* Basic Details */}

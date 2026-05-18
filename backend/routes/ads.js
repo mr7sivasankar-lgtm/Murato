@@ -201,8 +201,18 @@ router.post('/', protect, (req, res, next) => {
         : [0, 0],
     };
 
-    // Images → Cloudinary
+    // Images → Cloudinary + default URL images
     data.images = [];
+
+    // 1. Any default/existing image URLs passed from the frontend (e.g. category default)
+    if (req.body.existingImages) {
+      try {
+        const existing = JSON.parse(req.body.existingImages);
+        if (Array.isArray(existing)) data.images.push(...existing);
+      } catch (_) { /* ignore parse errors */ }
+    }
+
+    // 2. Actual file uploads → upload to Cloudinary
     if (req.files?.length) {
       for (const file of req.files) {
         const r = await uploadToCloudinary(file.buffer, 'murato/ads');
