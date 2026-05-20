@@ -214,7 +214,7 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
               {(ad.businessName || seller.businessName || seller.name || '?')[0].toUpperCase()}
             </div>
             <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: 11, fontWeight: 600, color: '#1a2b5f', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <p style={{ fontSize: 11, fontWeight: 900, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: '#FFF4B2', padding: '2px 8px', borderRadius: 6, display: 'inline-block', maxWidth: '100%' }}>
                 {ad.businessName || seller.businessName || seller.name || 'Seller'}
               </p>
               {(seller.ratingAvg > 0) && <StarRow avg={seller.ratingAvg} count={seller.ratingCount} />}

@@ -527,91 +527,46 @@ export default function SellPage() {
 
       <div style={{ padding: '16px' }}>
 
-        {/* Photos */}
-        <Section title={t('photos')} icon="📷">
-          {/* Hidden file inputs */}
-          <input ref={fileRef}   type="file" accept="image/*" multiple capture={undefined} style={{ display: 'none' }} onChange={handleImages} />
-          <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleCamera} />
-
-          {/* ── Default image preview (shown only when no custom photo uploaded) ── */}
-          {isProduct && defaultAdImage && !hasCustomImages && (
-            <div style={{ marginBottom: 12 }}>
-              {/* Info badge */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fffbeb', border: '1.5px solid #fbbf24', borderRadius: 10, padding: '8px 12px', marginBottom: 10 }}>
-                <span style={{ fontSize: 16 }}>🖼️</span>
-                <div>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: '#92400e', margin: 0 }}>Default product image will be used</p>
-                  <p style={{ fontSize: 11, color: '#b45309', margin: 0 }}>Upload your own photo below to replace this</p>
-                </div>
-              </div>
-              {/* Default image thumbnail */}
-              <div style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'hidden', border: '2px dashed #fbbf24' }}>
-                <img
-                  src={defaultAdImage}
-                  alt={`Default ${pForm.category} image`}
-                  style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block', opacity: 0.88 }}
-                />
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.55))', padding: '20px 12px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>📦 {pForm.category} — Default Image</span>
-                  <span style={{ background: '#fbbf24', color: '#78350f', fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 20 }}>DEFAULT</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Custom uploaded images */}
-          {hasCustomImages && (
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-              {images.map((img, i) => (
-                <div key={i} style={{ position: 'relative', width: 80, height: 80 }}>
-                  <img src={img.preview} alt="" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 10 }} />
-                  <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: -6, right: -6, background: '#ef4444', border: 'none', borderRadius: '50%', width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white' }}>
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {images.length < 5 && (
-            <div style={{ display: 'flex', gap: 10, marginTop: hasCustomImages ? 0 : 0 }}>
-              {/* Gallery picker */}
-              <button onClick={() => fileRef.current?.click()}
-                style={{ flex: 1, height: 72, borderRadius: 12, border: '2px dashed var(--border)', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, cursor: 'pointer', color: 'var(--text-muted)' }}>
-                <Image size={20} />
-                <span style={{ fontSize: 11, fontWeight: 600 }}>Gallery</span>
-              </button>
-              {/* Camera */}
-              <button onClick={() => cameraRef.current?.click()}
-                style={{ flex: 1, height: 72, borderRadius: 12, border: '2px dashed #7c3aed', background: '#faf5ff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, cursor: 'pointer', color: '#7c3aed' }}>
-                <Camera size={20} />
-                <span style={{ fontSize: 11, fontWeight: 600 }}>Camera</span>
-              </button>
-            </div>
-          )}
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
-            {isProduct
-              ? hasCustomImages
-                ? `${images.length}/5 photos added · First photo is cover`
-                : defaultAdImage
-                  ? '✅ Default image ready · Or add your own photo above (up to 5)'
-                  : 'Add up to 5 photos · First photo is cover'
-              : 'Optional · Up to 5 photos · First photo is cover · Tap to crop'
-            }
-          </p>
+        {/* ── 1. Seller / Provider Info ─────────────────────────────────── */}
+        <Section title={isProduct ? 'Seller Info' : 'Service Provider Details'} icon={isProduct ? '🏪' : '👷'}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">
+              {isProduct ? 'Business / Shop Name' : 'Provider / Business Name'}
+            </label>
+            <input
+              className="form-input"
+              placeholder="Your business or shop name"
+              value={form.businessName}
+              onChange={e => fSet('businessName', e.target.value)}
+            />
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+              This will be shown publicly on your ad
+            </p>
+          </div>
         </Section>
 
-        {/* Basic Details */}
-        <Section title={t('basicDetails')} icon="📝">
-          {/* Product: title first | Service: categories first then auto-filled title */}
-          {isProduct && (
-            <div className="form-group">
-              <label className="form-label">Product Title *</label>
-              <input className="form-input" placeholder="e.g., UltraTech OPC Cement — 50kg bags" value={form.title} onChange={e => fSet('title', e.target.value)} />
+        {/* ── 2. Product Title (optional) ───────────────────────────────── */}
+        {isProduct && (
+          <Section title="Product Title" icon="🏷️">
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">
+                Product Title{' '}
+                <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11 }}>
+                  (optional — auto-filled from category)
+                </span>
+              </label>
+              <input
+                className="form-input"
+                placeholder="e.g., UltraTech OPC Cement — 50kg bags"
+                value={form.title}
+                onChange={e => fSet('title', e.target.value)}
+              />
             </div>
-          )}
+          </Section>
+        )}
 
-          {/* Product: single category dropdown | Service: multi-chip grid */}
+        {/* ── 3. Categories ─────────────────────────────────────────────── */}
+        <Section title="Categories" icon="📂">
           {isProduct ? (
             <>
               <CatSelect
@@ -620,10 +575,8 @@ export default function SellPage() {
                 onChange={v => {
                   pSet('category', v);
                   pSet('subcategories', []);
-                  // Auto-set price unit from category
                   if (CAT_UNIT[v]) pSet('priceType', CAT_UNIT[v]);
-                  // Auto-populate product title with category name (editable)
-                  if (v) pSet('title', v);
+                  if (v && !pForm.title) pSet('title', v);
                 }}
                 options={PRODUCT_CATEGORIES}
                 placeholder={t('selectCategory')}
@@ -634,141 +587,124 @@ export default function SellPage() {
                   <input className="form-input" placeholder={t('typeCategory')} value={pForm.manualCategory || ''} onChange={e => { pSet('manualCategory', e.target.value); pSet('category', e.target.value); }} />
                 </div>
               )}
+              {pSubcats.length > 0 && (
+                <CheckboxGrid
+                  label={t('subcategoriesLabel')}
+                  options={pSubcats}
+                  selected={pForm.subcategories}
+                  onChange={v => pSet('subcategories', v)}
+                  allowOther
+                />
+              )}
             </>
           ) : (
-            <div className="form-group">
-              <label className="form-label">Service Category * <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(select all that apply)</span></label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
-                {SVC_CATS.map(cat => {
-                  const sel = sForm.categories.includes(cat.name);
-                  return (
-                    <button key={cat.name} type="button"
-                      onClick={() => {
-                        const next = sel
-                          ? sForm.categories.filter(c => c !== cat.name)
-                          : [...sForm.categories, cat.name];
-                        sSet('categories', next);
-                        // Auto-fill title when first category selected
-                        if (!sel && !sForm.title && SVC_TITLES[cat.name])
-                          sSet('title', SVC_TITLES[cat.name]);
-                      }}
-                      style={{ padding: '8px 13px', borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, border: `1.5px solid ${sel ? 'var(--navy)' : 'var(--border)'}`, background: sel ? '#f0f3fc' : 'white', color: sel ? 'var(--navy)' : 'var(--text-secondary)' }}
-                    >
-                      {sel && <Check size={11} />} {cat.icon} {cat.name}
-                    </button>
-                  );
-                })}
+            <>
+              <div className="form-group">
+                <label className="form-label">
+                  Service Category *{' '}
+                  <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(select all that apply)</span>
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                  {SVC_CATS.map(cat => {
+                    const sel = sForm.categories.includes(cat.name);
+                    return (
+                      <button key={cat.name} type="button"
+                        onClick={() => {
+                          const next = sel
+                            ? sForm.categories.filter(c => c !== cat.name)
+                            : [...sForm.categories, cat.name];
+                          sSet('categories', next);
+                          if (!sel && !sForm.title && SVC_TITLES[cat.name])
+                            sSet('title', SVC_TITLES[cat.name]);
+                        }}
+                        style={{ padding: '8px 13px', borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, border: `1.5px solid ${sel ? 'var(--navy)' : 'var(--border)'}`, background: sel ? '#f0f3fc' : 'white', color: sel ? 'var(--navy)' : 'var(--text-secondary)' }}
+                      >
+                        {sel && <Check size={11} />} {cat.icon} {cat.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <AddCustomCategory selected={sForm.categories} onChange={v => sSet('categories', v)} />
               </div>
-              {/* Custom add */}
-              <AddCustomCategory
-                selected={sForm.categories}
-                onChange={v => sSet('categories', v)}
-              />
-            </div>
+              {/* Service title — shown after categories, auto-filled */}
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">
+                  Service Title *
+                  <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11 }}> (auto-filled, you can edit)</span>
+                </label>
+                <input className="form-input" placeholder="e.g., Experienced Mason for Construction Work" value={sForm.title} onChange={e => sSet('title', e.target.value)} />
+              </div>
+            </>
           )}
-
-          {/* Service title — shown after categories, auto-filled */}
-          {!isProduct && (
-            <div className="form-group">
-              <label className="form-label">Service Title *
-                <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11 }}> (auto-filled, you can edit)</span>
-              </label>
-              <input className="form-input" placeholder="e.g., Experienced Mason for Construction Work" value={sForm.title} onChange={e => sSet('title', e.target.value)} />
-            </div>
-          )}
-
-
-          {isProduct && pSubcats.length > 0 && (
-            <CheckboxGrid
-              label={isProduct ? t('subcategoriesLabel') : t('workTypesLabel')}
-              options={isProduct ? pSubcats : sSubcats}
-              selected={form.subcategories}
-              onChange={v => fSet('subcategories', v)}
-              allowOther
-            />
-          )}
-
-
         </Section>
 
-        {/* ── Product sections ── */}
-        {isProduct && (
-          <>
-            <Section title="Product Details" icon="📦">
-              {/* Brand — FREE TEXT input + optional suggestions */}
-              <div className="form-group">
-                <label className="form-label">Brand <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11 }}>(optional)</span></label>
-                <input
-                  className="form-input"
-                  placeholder="e.g., UltraTech, TATA, Bosch, or your brand"
-                  value={pForm.brand}
-                  onChange={e => pSet('brand', e.target.value)}
-                />
-                {selectedPCat?.brands?.length > 0 && (
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-                    {selectedPCat.brands.map(b => (
-                      <button
-                        key={b}
-                        type="button"
-                        onClick={() => pSet('brand', b)}
-                        style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, border: `1.5px solid ${pForm.brand === b ? 'var(--navy)' : 'var(--border)'}`, background: pForm.brand === b ? '#f0f3fc' : 'white', color: pForm.brand === b ? 'var(--navy)' : 'var(--text-secondary)', cursor: 'pointer' }}
-                      >
-                        {b}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Quick select above or type your own brand name</p>
-              </div>
-              <div className="form-group">
-                <label className="form-label">{t('conditionLabel')}</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {['new', 'used'].map(c => (
-                    <button key={c} type="button" onClick={() => pSet('condition', c)} style={{ flex: 1, padding: '10px', borderRadius: 8, border: `2px solid ${pForm.condition === c ? 'var(--navy)' : 'var(--border)'}`, background: pForm.condition === c ? '#f0f3fc' : 'white', fontWeight: 600, fontSize: 13, color: pForm.condition === c ? 'var(--navy)' : 'var(--text-secondary)', cursor: 'pointer', textTransform: 'capitalize' }}>
-                      {c === 'new' ? '✨ New' : '🔄 Used'}
-                    </button>
+        {/* ── 4. Product Details / Experience ───────────────────────────── */}
+        {isProduct ? (
+          <Section title="Product Details" icon="📦">
+            <div className="form-group">
+              <label className="form-label">Brand <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: 11 }}>(optional)</span></label>
+              <input
+                className="form-input"
+                placeholder="e.g., UltraTech, TATA, Bosch, or your brand"
+                value={pForm.brand}
+                onChange={e => pSet('brand', e.target.value)}
+              />
+              {selectedPCat?.brands?.length > 0 && (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                  {selectedPCat.brands.map(b => (
+                    <button
+                      key={b} type="button" onClick={() => pSet('brand', b)}
+                      style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, border: `1.5px solid ${pForm.brand === b ? 'var(--navy)' : 'var(--border)'}`, background: pForm.brand === b ? '#f0f3fc' : 'white', color: pForm.brand === b ? 'var(--navy)' : 'var(--text-secondary)', cursor: 'pointer' }}
+                    >{b}</button>
                   ))}
                 </div>
+              )}
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Quick select above or type your own brand name</p>
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">{t('conditionLabel')}</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {['new', 'used'].map(c => (
+                  <button key={c} type="button" onClick={() => pSet('condition', c)} style={{ flex: 1, padding: '10px', borderRadius: 8, border: `2px solid ${pForm.condition === c ? 'var(--navy)' : 'var(--border)'}`, background: pForm.condition === c ? '#f0f3fc' : 'white', fontWeight: 600, fontSize: 13, color: pForm.condition === c ? 'var(--navy)' : 'var(--text-secondary)', cursor: 'pointer', textTransform: 'capitalize' }}>
+                    {c === 'new' ? '✨ New' : '🔄 Used'}
+                  </button>
+                ))}
               </div>
-            </Section>
-
-
-
-            <Section title={t('pricing')} icon="💰">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Price *</label>
-                  <input className="form-input" type="number" placeholder="₹" value={pForm.price} onChange={e => pSet('price', e.target.value)} />
-                </div>
-                <CatSelect label="Per" value={pForm.priceType} onChange={v => pSet('priceType', v)} options={['per_bag','per_ton','per_kg','per_piece','per_sqft','per_load','per_litre','fixed'].map(p => ({ name: p, label: PRICE_TYPE_LABELS[p] || p }))} placeholder="Per" />
-              </div>
-            </Section>
-          </>
+            </div>
+          </Section>
+        ) : (
+          <Section title="Experience" icon="💼">
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Experience (Years) <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span></label>
+              <input className="form-input" type="number" placeholder="e.g., 5" value={sForm.experienceYears} onChange={e => sSet('experienceYears', e.target.value)} />
+            </div>
+          </Section>
         )}
 
-        {/* ── Service sections ── */}
-        {!isProduct && (
-          <>
-            <Section title="Experience" icon="💼">
-              <div className="form-group">
-                <label className="form-label">Experience (Years) <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span></label>
-                <input className="form-input" type="number" placeholder="e.g., 5" value={sForm.experienceYears} onChange={e => sSet('experienceYears', e.target.value)} />
+        {/* ── 5. Pricing ────────────────────────────────────────────────── */}
+        {isProduct ? (
+          <Section title={t('pricing')} icon="💰">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Price *</label>
+                <input className="form-input" type="number" placeholder="₹" value={pForm.price} onChange={e => pSet('price', e.target.value)} />
               </div>
-            </Section>
-
-            <Section title={t('pricing')} icon="💰">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <CatSelect label="Pricing Type" value={sForm.pricingType} onChange={v => sSet('pricingType', v)} options={['per_day','per_hour','per_sqft','per_project','fixed'].map(p => ({ name: p, label: PRICE_TYPE_LABELS[p] || p }))} placeholder="Type" />
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Rate (₹) *</label>
-                  <input className="form-input" type="number" placeholder="₹" value={sForm.price} onChange={e => sSet('price', e.target.value)} />
-                </div>
+              <CatSelect label="Per" value={pForm.priceType} onChange={v => pSet('priceType', v)} options={['per_bag','per_ton','per_kg','per_piece','per_sqft','per_load','per_litre','fixed'].map(p => ({ name: p, label: PRICE_TYPE_LABELS[p] || p }))} placeholder="Per" />
+            </div>
+          </Section>
+        ) : (
+          <Section title={t('pricing')} icon="💰">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <CatSelect label="Pricing Type" value={sForm.pricingType} onChange={v => sSet('pricingType', v)} options={['per_day','per_hour','per_sqft','per_project','fixed'].map(p => ({ name: p, label: PRICE_TYPE_LABELS[p] || p }))} placeholder="Type" />
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Rate (₹) *</label>
+                <input className="form-input" type="number" placeholder="₹" value={sForm.price} onChange={e => sSet('price', e.target.value)} />
               </div>
-            </Section>
-          </>
+            </div>
+          </Section>
         )}
 
-        {/* Location — GPS + Search + Map pin */}
+        {/* ── 6. Location ───────────────────────────────────────────────── */}
         <Section title={t('location')} icon="📍">
           <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
             <button type="button" onClick={detectLocation} disabled={detecting}
@@ -798,7 +734,6 @@ export default function SellPage() {
             </div>
           )}
 
-          {/* Manual text inputs */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">City *</label>
@@ -811,55 +746,46 @@ export default function SellPage() {
           </div>
         </Section>
 
-        <Section title={t('contact')} icon="📞">
-          <div className="form-group">
-            <label className="form-label">Business / Shop Name</label>
-            <input className="form-input" placeholder="Your business or your name" value={form.businessName} onChange={e => fSet('businessName', e.target.value)} />
-          </div>
+        {/* ── 7. How can buyers contact you? ────────────────────────────── */}
+        <Section title="How can buyers contact you?" icon="📞">
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>💬 In-app Chat is always enabled</p>
 
-
-          {/* Contact options — independent checkboxes */}
-          <div className="form-group">
-            <label className="form-label">How can buyers contact you?</label>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>💬 In-app Chat is always enabled</p>
-
-            {/* Allow Call toggle */}
-            <div
-              onClick={() => fSet('contactMode', form.contactMode === 'direct' ? 'chat' : 'direct')}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, border: `2px solid ${form.contactMode === 'direct' ? '#10b981' : 'var(--border)'}`, background: form.contactMode === 'direct' ? '#f0fdf4' : 'white', cursor: 'pointer', marginBottom: 8 }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Phone size={16} color={form.contactMode === 'direct' ? '#10b981' : '#9ca3af'} />
-                <div>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: form.contactMode === 'direct' ? '#10b981' : 'var(--text-secondary)' }}>Allow Direct Call</p>
-                  <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Your phone number will be visible to buyers</p>
-                </div>
-              </div>
-              <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${form.contactMode === 'direct' ? '#10b981' : '#d1d5db'}`, background: form.contactMode === 'direct' ? '#10b981' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {form.contactMode === 'direct' && <span style={{ color: 'white', fontSize: 14, lineHeight: 1 }}>✓</span>}
+          {/* Allow Call toggle */}
+          <div
+            onClick={() => fSet('contactMode', form.contactMode === 'direct' ? 'chat' : 'direct')}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, border: `2px solid ${form.contactMode === 'direct' ? '#10b981' : 'var(--border)'}`, background: form.contactMode === 'direct' ? '#f0fdf4' : 'white', cursor: 'pointer', marginBottom: 8 }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Phone size={16} color={form.contactMode === 'direct' ? '#10b981' : '#9ca3af'} />
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: form.contactMode === 'direct' ? '#10b981' : 'var(--text-secondary)' }}>Allow Direct Call</p>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Your phone number will be visible to buyers</p>
               </div>
             </div>
+            <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${form.contactMode === 'direct' ? '#10b981' : '#d1d5db'}`, background: form.contactMode === 'direct' ? '#10b981' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {form.contactMode === 'direct' && <span style={{ color: 'white', fontSize: 14, lineHeight: 1 }}>✓</span>}
+            </div>
+          </div>
 
-            {/* WhatsApp toggle */}
-            <div
-              onClick={() => fSet('whatsappAvailable', !form.whatsappAvailable)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, border: `2px solid ${form.whatsappAvailable ? '#25d366' : 'var(--border)'}`, background: form.whatsappAvailable ? '#f0fdf4' : 'white', cursor: 'pointer' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 18 }}>💚</span>
-                <div>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: form.whatsappAvailable ? '#25d366' : 'var(--text-secondary)' }}>WhatsApp Available</p>
-                  <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Buyers can message you on WhatsApp</p>
-                </div>
+          {/* WhatsApp toggle */}
+          <div
+            onClick={() => fSet('whatsappAvailable', !form.whatsappAvailable)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, border: `2px solid ${form.whatsappAvailable ? '#25d366' : 'var(--border)'}`, background: form.whatsappAvailable ? '#f0fdf4' : 'white', cursor: 'pointer' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 18 }}>💚</span>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: form.whatsappAvailable ? '#25d366' : 'var(--text-secondary)' }}>WhatsApp Available</p>
+                <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Buyers can message you on WhatsApp</p>
               </div>
-              <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${form.whatsappAvailable ? '#25d366' : '#d1d5db'}`, background: form.whatsappAvailable ? '#25d366' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {form.whatsappAvailable && <span style={{ color: 'white', fontSize: 14, lineHeight: 1 }}>✓</span>}
-              </div>
+            </div>
+            <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${form.whatsappAvailable ? '#25d366' : '#d1d5db'}`, background: form.whatsappAvailable ? '#25d366' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {form.whatsappAvailable && <span style={{ color: 'white', fontSize: 14, lineHeight: 1 }}>✓</span>}
             </div>
           </div>
         </Section>
 
-        {/* Description */}
+        {/* ── 8. Description ────────────────────────────────────────────── */}
         <Section title={t('description')} icon="📄">
           <textarea
             className="form-input"
@@ -869,6 +795,69 @@ export default function SellPage() {
             onChange={e => fSet('description', e.target.value)}
             style={{ resize: 'vertical' }}
           />
+        </Section>
+
+        {/* ── 9. Photos ─────────────────────────────────────────────────── */}
+        <Section title={t('photos')} icon="📷">
+          <input ref={fileRef}   type="file" accept="image/*" multiple capture={undefined} style={{ display: 'none' }} onChange={handleImages} />
+          <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleCamera} />
+
+          {isProduct && defaultAdImage && !hasCustomImages && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fffbeb', border: '1.5px solid #fbbf24', borderRadius: 10, padding: '8px 12px', marginBottom: 10 }}>
+                <span style={{ fontSize: 16 }}>🖼️</span>
+                <div>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#92400e', margin: 0 }}>Default product image will be used</p>
+                  <p style={{ fontSize: 11, color: '#b45309', margin: 0 }}>Upload your own photo below to replace this</p>
+                </div>
+              </div>
+              <div style={{ position: 'relative', width: '100%', borderRadius: 12, overflow: 'hidden', border: '2px dashed #fbbf24' }}>
+                <img src={defaultAdImage} alt={`Default ${pForm.category} image`} style={{ width: '100%', height: 180, objectFit: 'cover', display: 'block', opacity: 0.88 }} />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.55))', padding: '20px 12px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'white', fontSize: 12, fontWeight: 700 }}>📦 {pForm.category} — Default Image</span>
+                  <span style={{ background: '#fbbf24', color: '#78350f', fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 20 }}>DEFAULT</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {hasCustomImages && (
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+              {images.map((img, i) => (
+                <div key={i} style={{ position: 'relative', width: 80, height: 80 }}>
+                  <img src={img.preview} alt="" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 10 }} />
+                  <button onClick={() => removeImage(i)} style={{ position: 'absolute', top: -6, right: -6, background: '#ef4444', border: 'none', borderRadius: '50%', width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white' }}>
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {images.length < 5 && (
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => fileRef.current?.click()}
+                style={{ flex: 1, height: 72, borderRadius: 12, border: '2px dashed var(--border)', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, cursor: 'pointer', color: 'var(--text-muted)' }}>
+                <Image size={20} />
+                <span style={{ fontSize: 11, fontWeight: 600 }}>Gallery</span>
+              </button>
+              <button onClick={() => cameraRef.current?.click()}
+                style={{ flex: 1, height: 72, borderRadius: 12, border: '2px dashed #7c3aed', background: '#faf5ff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, cursor: 'pointer', color: '#7c3aed' }}>
+                <Camera size={20} />
+                <span style={{ fontSize: 11, fontWeight: 600 }}>Camera</span>
+              </button>
+            </div>
+          )}
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
+            {isProduct
+              ? hasCustomImages
+                ? `${images.length}/5 photos added · First photo is cover`
+                : defaultAdImage
+                  ? '✅ Default image ready · Or add your own photo above (up to 5)'
+                  : 'Add up to 5 photos · First photo is cover'
+              : 'Optional · Up to 5 photos · First photo is cover · Tap to crop'
+            }
+          </p>
         </Section>
 
         {/* Submit */}

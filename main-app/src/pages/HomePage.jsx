@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, ChevronRight, Loader } from 'lucide-react';
+import { Search, MapPin, ChevronRight, Loader, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { PRODUCT_CATEGORIES } from '../data/categories';
@@ -426,7 +426,17 @@ export default function HomePage() {
               {activeCategory ? activeCategory : displayCity ? `${t('near')} ${displayCity}` : 'All Listings'}{' '}
               <span>{ads.length}+</span>
             </p>
-            <button className="see-more" onClick={() => navigate('/search')}>{t('seeAll')}</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                onClick={() => fetchAds()}
+                disabled={loading}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', color: 'var(--text-muted)' }}
+                title="Refresh listings"
+              >
+                <RefreshCw size={15} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
+              </button>
+              <button className="see-more" onClick={() => navigate('/search')}>{t('seeAll')}</button>
+            </div>
           </div>
 
           {loading ? (
