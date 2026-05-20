@@ -10,41 +10,86 @@ const ALL_CATS = [
   ...SERVICE_CATEGORIES.map(c => ({ name: c.name, icon: '🔧', type: 'service' })),
 ];
 
+const parseNaturalSearch = (qStr) => {
+  if (!qStr) return { query: '', min: '', max: '' };
+  let cleaned = qStr.toLowerCase();
+  let min = '';
+  let max = '';
+
+  const belowRegex = /(?:below|under|less\s+than|<=|<)\s*(?:rs\.?|inr|₹)?\s*(\d+)/i;
+  const aboveRegex = /(?:above|over|more\s+than|>=|>)\s*(?:rs\.?|inr|₹)?\s*(\d+)/i;
+
+  let match;
+  if ((match = cleaned.match(belowRegex))) {
+    max = match[1];
+    cleaned = cleaned.replace(match[0], '');
+  } else if ((match = cleaned.match(aboveRegex))) {
+    min = match[1];
+    cleaned = cleaned.replace(match[0], '');
+  }
+
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+  return { query: cleaned, min, max };
+};
+
 export default function SearchPage() {
   const [params]   = useSearchParams();
   const navigate   = useNavigate();
-  const [query,      setQuery]      = useState(params.get('q') || '');
+
+  // Natural language query parsing on mount
+  const initialQ = params.get('q') || '';
+  const parsed = parseNaturalSearch(initialQ);
+
+  const [query,      setQuery]      = useState(parsed.query);
   const [category,   setCategory]   = useState(params.get('category') || '');
   const [type,       setType]       = useState(params.get('type') || '');
-  const [minPrice,   setMinPrice]   = useState('');
-  const [maxPrice,   setMaxPrice]   = useState('');
+  const [minPrice,   setMinPrice]   = useState(parsed.min);
+  const [maxPrice,   setMaxPrice]   = useState(parsed.max);
+  const [sortBy,     setSortBy]     = useState('');
   const [ads,        setAds]        = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [total,      setTotal]      = useState(0);
   const [showFilter, setShowFilter] = useState(false);
 
-  useEffect(() => { doSearch(); }, []);
+  useEffect(() => { doSearch(); }, [category, type, sortBy]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const doSearch = useCallback(async () => {
+  const doSearch = useCallback(async (overrides = {}) => {
     setLoading(true);
+    const qVal = overrides.hasOwnProperty('q') ? overrides.q : query;
+    const minVal = overrides.hasOwnProperty('minPrice') ? overrides.minPrice : minPrice;
+    const maxVal = overrides.hasOwnProperty('maxPrice') ? overrides.maxPrice : maxPrice;
+    const catVal = overrides.hasOwnProperty('category') ? overrides.category : category;
+    const typeVal = overrides.hasOwnProperty('type') ? overrides.type : type;
+    const sortVal = overrides.hasOwnProperty('sortBy') ? overrides.sortBy : sortBy;
+
     try {
       const p = {};
-      if (query)    p.q        = query;
-      if (category) p.category = category;
-      if (type)     p.type     = type;
-      if (minPrice) p.minPrice = minPrice;
-      if (maxPrice) p.maxPrice = maxPrice;
+      if (qVal)    p.q        = qVal;
+      if (catVal)  p.category = catVal;
+      if (typeVal) p.type     = typeVal;
+      if (minVal)  p.minPrice = minVal;
+      if (maxVal)  p.maxPrice = maxVal;
+      if (sortVal) p.sortBy   = sortVal;
       const { data } = await api.get('/ads', { params: p });
       setAds(data.ads || []);
       setTotal(data.total || 0);
     } catch { setAds([]); setTotal(0); }
     finally { setLoading(false); }
-  }, [query, category, type, minPrice, maxPrice]);
+  }, [query, category, type, minPrice, maxPrice, sortBy]);
 
-  const handleSearch = (e) => { e.preventDefault(); doSearch(); };
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const parsed = parseNaturalSearch(query);
+    setQuery(parsed.query);
+    const nextMin = parsed.min || minPrice;
+    const nextMax = parsed.max || maxPrice;
+    if (parsed.min) setMinPrice(parsed.min);
+    if (parsed.max) setMaxPrice(parsed.max);
+    doSearch({ q: parsed.query, minPrice: nextMin, maxPrice: nextMax });
+  };
 
-  const clearFilters = () => { setCategory(''); setType(''); setMinPrice(''); setMaxPrice(''); };
-  const hasFilters   = category || type || minPrice || maxPrice;
+  const clearFilters = () => { setCategory(''); setType(''); setMinPrice(''); setMaxPrice(''); setSortBy(''); };
+  const hasFilters   = category || type || minPrice || maxPrice || sortBy;
 
   return (
     <div className="page page-enter" style={{ paddingBottom: 30 }}>
@@ -117,9 +162,24 @@ export default function SearchPage() {
               <input className="form-input" placeholder="Max ₹" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} style={{ width: '50%' }} type="number" />
             </div>
 
+            {/* Sort By */}
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Sort By</p>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+              {[
+                { val: '', label: 'Relevance / Newest' },
+                { val: 'price_asc', label: 'Price: Low to High' },
+                { val: 'price_desc', label: 'Price: High to Low' },
+              ].map(s => (
+                <button key={s.val} onClick={() => setSortBy(s.val)}
+                  style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: '1.5px solid', borderColor: sortBy === s.val ? 'var(--navy)' : 'var(--border)', background: sortBy === s.val ? 'var(--navy)' : 'white', color: sortBy === s.val ? 'white' : 'var(--text-secondary)', cursor: 'pointer' }}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+
             {/* Actions */}
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={doSearch} className="btn btn-primary" style={{ flex: 2, padding: '11px 0' }}>
+              <button onClick={() => doSearch()} className="btn btn-primary" style={{ flex: 2, padding: '11px 0' }}>
                 Apply Filters
               </button>
               {hasFilters && (
@@ -140,6 +200,7 @@ export default function SearchPage() {
             {category && <span style={{ fontSize: 11, fontWeight: 700, background: '#f0f3fc', color: 'var(--navy)', padding: '4px 10px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 4 }}>{category} <button onClick={() => setCategory('')} style={{ display: 'flex' }}><X size={10} /></button></span>}
             {type && <span style={{ fontSize: 11, fontWeight: 700, background: '#f0f3fc', color: 'var(--navy)', padding: '4px 10px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 4 }}>{type} <button onClick={() => setType('')} style={{ display: 'flex' }}><X size={10} /></button></span>}
             {(minPrice || maxPrice) && <span style={{ fontSize: 11, fontWeight: 700, background: '#f0f3fc', color: 'var(--navy)', padding: '4px 10px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 4 }}>₹{minPrice||0}–{maxPrice||'∞'} <button onClick={() => { setMinPrice(''); setMaxPrice(''); }} style={{ display: 'flex' }}><X size={10} /></button></span>}
+            {sortBy && <span style={{ fontSize: 11, fontWeight: 700, background: '#f0f3fc', color: 'var(--navy)', padding: '4px 10px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 4 }}>{sortBy === 'price_asc' ? 'Price: Low to High' : 'Price: High to Low'} <button onClick={() => setSortBy('')} style={{ display: 'flex' }}><X size={10} /></button></span>}
           </div>
         )}
 

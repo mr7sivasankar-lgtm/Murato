@@ -20,6 +20,30 @@ const SERVICE_FIELDS = [
   'negotiable',  // ← workers can also mark rate as negotiable
 ];
 
+// Helper: Extract price limits from natural query text
+function parseNaturalSearch(q) {
+  if (!q) return { query: q, minPrice: null, maxPrice: null };
+
+  let cleaned = q.toLowerCase();
+  let minPrice = null;
+  let maxPrice = null;
+
+  const belowRegex = /(?:below|under|less\s+than|<=|<)\s*(?:rs\.?|inr|₹)?\s*(\d+)/i;
+  const aboveRegex = /(?:above|over|more\s+than|>=|>)\s*(?:rs\.?|inr|₹)?\s*(\d+)/i;
+
+  let match;
+  if ((match = cleaned.match(belowRegex))) {
+    maxPrice = Number(match[1]);
+    cleaned = cleaned.replace(match[0], '');
+  } else if ((match = cleaned.match(aboveRegex))) {
+    minPrice = Number(match[1]);
+    cleaned = cleaned.replace(match[0], '');
+  }
+
+  cleaned = cleaned.replace(/\s+/g, ' ').trim();
+  return { query: cleaned, minPrice, maxPrice };
+}
+
 // @GET /api/ads
 router.get('/', async (req, res) => {
   try {
@@ -28,21 +52,35 @@ router.get('/', async (req, res) => {
       minPrice, maxPrice, brand, negotiable,
       lat, lng, radius = 20,          // radius in km
       page = 1, limit = 20,
+      sortBy,
     } = req.query;
 
     const filter = { status: 'active' };
 
-    // Note: We removed MongoDB $regex search for 'q'. We will use Fuse.js after fetching.
+    // Natural Language Search Parsing
+    let searchQ = q;
+    let extractedMinPrice = null;
+    let extractedMaxPrice = null;
+    if (q) {
+      const parsed = parseNaturalSearch(q);
+      searchQ = parsed.query;
+      extractedMinPrice = parsed.minPrice;
+      extractedMaxPrice = parsed.maxPrice;
+    }
+
     if (category)    filter.category    = new RegExp(category, 'i');
     if (subcategory) filter.subcategory = new RegExp(subcategory, 'i');
     if (type)        filter.type = type;
     if (brand)       filter.brand = new RegExp(brand, 'i');
     if (negotiable === 'true') filter.negotiable = true;
 
-    if (minPrice || maxPrice) {
+    const activeMinPrice = minPrice || extractedMinPrice;
+    const activeMaxPrice = maxPrice || extractedMaxPrice;
+
+    if (activeMinPrice || activeMaxPrice) {
       filter.price = {};
-      if (minPrice) filter.price.$gte = Number(minPrice);
-      if (maxPrice) filter.price.$lte = Number(maxPrice);
+      if (activeMinPrice) filter.price.$gte = Number(activeMinPrice);
+      if (activeMaxPrice) filter.price.$lte = Number(activeMaxPrice);
     }
 
     // ── Geolocation: lat/lng radius OR city name ──────────────────────────
@@ -57,12 +95,22 @@ router.get('/', async (req, res) => {
       filter['location.city'] = new RegExp(city, 'i');
     }
 
+    // Determine sort options for MongoDB query (only if not fuzzy searching with q)
+    let sortObj = { isFeatured: -1, createdAt: -1 };
+    if (!q) {
+      if (sortBy === 'price_asc') {
+        sortObj = { isFeatured: -1, price: 1 };
+      } else if (sortBy === 'price_desc') {
+        sortObj = { isFeatured: -1, price: -1 };
+      }
+    }
+
     // Fetch all matching ads (without text search) to do memory fuzzy search
     let ads = await Ad.find(filter)
-      .sort({ isFeatured: -1, createdAt: -1 })
+      .sort(sortObj)
       .populate('userId', 'name avatar phone businessName contactMode whatsappAvailable ratingAvg ratingCount');
 
-    if (q) {
+    if (searchQ) {
       const Fuse = require('fuse.js');
       const fuse = new Fuse(ads, {
         keys: [
@@ -77,7 +125,15 @@ router.get('/', async (req, res) => {
         threshold: 0.4,
         ignoreLocation: true,
       });
-      ads = fuse.search(q).map(result => result.item);
+      ads = fuse.search(searchQ).map(result => result.item);
+    }
+
+    if (q && sortBy) {
+      if (sortBy === 'price_asc') {
+        ads.sort((a, b) => a.price - b.price);
+      } else if (sortBy === 'price_desc') {
+        ads.sort((a, b) => b.price - a.price);
+      }
     }
 
     const total = ads.length;
