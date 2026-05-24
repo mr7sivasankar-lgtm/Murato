@@ -16,9 +16,15 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('murato_token');
-      localStorage.removeItem('murato_user');
-      window.location.href = '/login';
+      const isAuthSubmit = err.config?.url?.includes('/auth/login-pin') || 
+                           err.config?.url?.includes('/auth/register') ||
+                           err.config?.url?.includes('/auth/login');
+      
+      if (!isAuthSubmit && window.location.pathname !== '/login') {
+        localStorage.removeItem('murato_token');
+        localStorage.removeItem('murato_user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   }
