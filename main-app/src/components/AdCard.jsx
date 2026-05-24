@@ -178,25 +178,21 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
         {/* Brand */}
         {ad.brand && <p style={{ fontSize: 11, color: '#6b7280', marginBottom: 5 }}>{t('brand')}: <strong style={{ color: '#1a2b5f' }}>{ad.brand}</strong></p>}
 
-        {/* Distance badge only (city removed to keep layout clean as requested) */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 5, marginBottom: 5, flexWrap: 'wrap' }}>
-            {km !== null ? (
-              <span style={{ fontSize: 10, fontWeight: 800, color: '#ffffff', background: '#dc2626', padding: '2px 7px', borderRadius: 5, display: 'flex', alignItems: 'center', gap: 3, boxShadow: '0 2px 6px rgba(220,38,38,0.3)' }}>
-                <Navigation size={9} fill="#ffffff" color="#ffffff" /> {km < 1 ? '<1' : Math.round(km)} km
-              </span>
-            ) : (!isService && (
-              <span style={{ fontSize: 9, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Navigation size={8} /> {t('noGps')}
-              </span>
-            ))}
+        {/* Price row with KM badge right-aligned */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+            <span style={{ fontSize: 17, fontWeight: 900, color: '#1a2b5f' }}>₹{Number(ad.price).toLocaleString('en-IN')}</span>
+            {priceLabel && <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 600 }}>{priceLabel}</span>}
           </div>
-
-
-
-        {/* Price */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>
-          <span style={{ fontSize: 17, fontWeight: 900, color: '#1a2b5f' }}>₹{Number(ad.price).toLocaleString('en-IN')}</span>
-          {priceLabel && <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 600 }}>{priceLabel}</span>}
+          {km !== null ? (
+            <span style={{ fontSize: 10, fontWeight: 800, color: '#ffffff', background: '#dc2626', padding: '3px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 3, boxShadow: '0 2px 6px rgba(220,38,38,0.35)', flexShrink: 0 }}>
+              <Navigation size={9} fill="#ffffff" color="#ffffff" /> {km < 1 ? '<1' : Math.round(km)} km
+            </span>
+          ) : (!isService && (
+            <span style={{ fontSize: 9, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Navigation size={8} /> {t('noGps')}
+            </span>
+          ))}
         </div>
 
         {/* Seller row — tap to view seller profile */}
