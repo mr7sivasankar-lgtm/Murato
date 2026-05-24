@@ -181,8 +181,8 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
         {/* Distance badge only (city removed to keep layout clean as requested) */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 5, marginBottom: 5, flexWrap: 'wrap' }}>
             {km !== null ? (
-              <span style={{ fontSize: 10, fontWeight: 800, color: '#1a2b5f', background: '#FFBB00', padding: '2px 7px', borderRadius: 5, display: 'flex', alignItems: 'center', gap: 3, boxShadow: '0 2px 6px rgba(255,187,0,0.3)' }}>
-                <Navigation size={9} /> {km < 1 ? '<1' : Math.round(km)} km
+              <span style={{ fontSize: 10, fontWeight: 800, color: '#ffffff', background: '#dc2626', padding: '2px 7px', borderRadius: 5, display: 'flex', alignItems: 'center', gap: 3, boxShadow: '0 2px 6px rgba(220,38,38,0.3)' }}>
+                <Navigation size={9} fill="#ffffff" color="#ffffff" /> {km < 1 ? '<1' : Math.round(km)} km
               </span>
             ) : (!isService && (
               <span style={{ fontSize: 9, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 2 }}>
