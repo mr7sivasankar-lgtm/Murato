@@ -330,18 +330,18 @@ export default function HomePage() {
             </div>
           </button>
 
-          {/* Center: Brand */}
-          <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)', letterSpacing: '-0.5px' }}>Myillo</span>
+          {/* Center: Brand - Removed as requested */}
+          <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)', letterSpacing: '-0.5px' }}></span>
 
-          {/* Right: greeting */}
+          {/* Right: greeting in pineapple yellow */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{
-              background: '#e87e04', color: 'white',
+              background: '#FFBB00', color: '#1a2b5f',
               borderRadius: 20, padding: '4px 12px',
-              fontSize: 13, fontWeight: 700, letterSpacing: 0.2,
+              fontSize: 13, fontWeight: 900, letterSpacing: 0.2,
               whiteSpace: 'nowrap',
             }}>
-              Hi {user?.name?.charAt(0).toUpperCase() || 'U'} 👋
+              Hi {user?.name || 'User'} 👋
             </div>
           </div>
         </div>

@@ -232,6 +232,75 @@ export default function AdDetailPage() {
           </div>
         )}
 
+        {/* Location Details Card */}
+        {ad.location && (
+          <div className="card" style={{ padding: 18, marginBottom: 12 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <MapPin size={16} color="var(--navy)" /> Location Details
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: 'var(--text-secondary)' }}>
+              {ad.location.doorNo && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 6 }}>
+                  <span>Door/Flat No.</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{ad.location.doorNo}</span>
+                </div>
+              )}
+              {ad.location.street && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 6 }}>
+                  <span>Street / Locality</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{ad.location.street}</span>
+                </div>
+              )}
+              {ad.location.area && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 6 }}>
+                  <span>Area / Suburb</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{ad.location.area}</span>
+                </div>
+              )}
+              {ad.location.city && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 6 }}>
+                  <span>City / Town</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{ad.location.city}</span>
+                </div>
+              )}
+              {ad.location.state && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 6 }}>
+                  <span>State</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{ad.location.state}</span>
+                </div>
+              )}
+              {ad.location.pincode && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 6 }}>
+                  <span>Pincode</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{ad.location.pincode}</span>
+                </div>
+              )}
+              {ad.location.fullAddress && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>FULL ADDRESS</span>
+                  <p style={{ margin: 0, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.4 }}>{ad.location.fullAddress}</p>
+                </div>
+              )}
+            </div>
+            
+            {/* View on Google Maps button */}
+            {ad.location.coordinates?.[1] && ad.location.coordinates?.[0] && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const lat = ad.location.coordinates[1];
+                  const lng = ad.location.coordinates[0];
+                  window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
+                }}
+                className="btn btn-outline"
+                style={{ width: '100%', marginTop: 14, borderRadius: 10, fontSize: 13, fontWeight: 700, gap: 6, justifyContent: 'center', display: 'flex', alignItems: 'center' }}
+              >
+                🗺️ View on Google Maps
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Seller card → links to SellerProfilePage */}
         <div
           className="card"
@@ -242,7 +311,7 @@ export default function AdDetailPage() {
             {(ad.businessName || seller.businessName || seller.name || '?')[0].toUpperCase()}
           </div>
           <div style={{ flex: 1 }}>
-            <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--navy)' }}>{ad.businessName || seller.businessName || seller.name}</p>
+            <p style={{ fontWeight: 900, fontSize: 15, color: '#1a2b5f', background: '#FFBB00', padding: '2px 8px', borderRadius: 6, display: 'inline-block' }}>{ad.businessName || seller.businessName || seller.name}</p>
             {seller.ratingAvg > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 3 }}>
                 {[1,2,3,4,5].map(s => <Star key={s} size={11} fill={s <= Math.round(seller.ratingAvg) ? '#f5c518' : 'none'} color={s <= Math.round(seller.ratingAvg) ? '#f5c518' : '#d1d5db'} />)}
