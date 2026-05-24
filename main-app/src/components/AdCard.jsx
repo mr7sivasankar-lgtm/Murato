@@ -185,8 +185,8 @@ export default function AdCard({ ad, onFavToggle, compact = false }) {
             {priceLabel && <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 600 }}>{priceLabel}</span>}
           </div>
           {km !== null ? (
-            <span style={{ fontSize: 10, fontWeight: 800, color: '#ffffff', background: '#dc2626', padding: '3px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 3, boxShadow: '0 2px 6px rgba(220,38,38,0.35)', flexShrink: 0 }}>
-              <Navigation size={9} fill="#ffffff" color="#ffffff" /> {km < 1 ? '<1' : Math.round(km)} km
+            <span style={{ fontSize: 10, fontWeight: 800, color: '#166534', background: '#dcfce7', padding: '3px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 3, boxShadow: '0 2px 6px rgba(22,163,74,0.2)', flexShrink: 0 }}>
+              <Navigation size={9} fill="#16a34a" color="#16a34a" /> {km < 1 ? '<1' : Math.round(km)} km
             </span>
           ) : (!isService && (
             <span style={{ fontSize: 9, color: '#9ca3af', display: 'flex', alignItems: 'center', gap: 2 }}>
