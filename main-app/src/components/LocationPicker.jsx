@@ -1,22 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Navigation, Search, X, ChevronRight, Loader } from 'lucide-react';
+import { MapPin, Navigation, Search, X, Loader } from 'lucide-react';
 import MapPinPicker from './MapPinPicker';
 import { useLanguage } from '../context/LanguageContext';
-
-// Fuzzy match helper
-function fuzzyMatch(str, query) {
-  str   = str.toLowerCase();
-  query = query.toLowerCase();
-  if (str.includes(query)) return true;
-  // simple character-skip fuzzy
-  let si = 0;
-  for (let qi = 0; qi < query.length; qi++) {
-    const idx = str.indexOf(query[qi], si);
-    if (idx === -1) return false;
-    si = idx + 1;
-  }
-  return true;
-}
 
 export default function LocationPicker({ isOpen, onClose, onSelect, currentCity }) {
   const { t } = useLanguage();
@@ -25,6 +10,8 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
   const [detecting,   setDetecting]   = useState(false);
   const [loading,     setLoading]     = useState(false);
   const [showMap,     setShowMap]     = useState(false);
+  const [mapCoords,   setMapCoords]   = useState(null); // { lat, lng }
+  
   const debounceRef = useRef(null);
   const inputRef    = useRef(null);
 
@@ -36,7 +23,7 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
     }
   }, [isOpen]);
 
-  // ── Debounced Nominatim search ──────────────────────────────────────────
+  // ── Debounced Fuzzy Nominatim search ──────────────────────────────────────────
   useEffect(() => {
     clearTimeout(debounceRef.current);
     if (search.trim().length < 2) { setSuggestions([]); return; }
@@ -44,21 +31,31 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       try {
+        // High limit fuzzy search over India
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(search)}&format=json&limit=8&addressdetails=1&accept-language=en`
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(search)}&format=json&limit=10&addressdetails=1&accept-language=en&countrycodes=in`
         );
         const data = await res.json();
 
-        const results = data
-          .map(r => {
-            const a = r.address || {};
-            const city = a.city || a.town || a.village || a.county || a.state_district || '';
-            const state = a.state || '';
-            const area  = a.suburb || a.neighbourhood || a.county || '';
-            return { display: `${city}${state ? ', ' + state : ''}`, city, area, lat: r.lat, lng: r.lon };
-          })
-          .filter(r => r.city) // only results with a city
-          .filter((r, i, arr) => arr.findIndex(x => x.city === r.city) === i); // dedupe by city
+        // Extract primary and secondary components like Google Places Autocomplete suggestions
+        const results = data.map(r => {
+          const a = r.address || {};
+          const primary = a.road || a.suburb || a.neighbourhood || a.village || a.town || a.city || r.display_name.split(',')[0];
+          const secondary = r.display_name.split(',').slice(1).join(',').trim();
+          
+          return {
+            primary,
+            secondary,
+            display: r.display_name,
+            city: a.city || a.town || a.village || a.county || '',
+            area: a.suburb || a.neighbourhood || a.county || '',
+            road: a.road || '',
+            state: a.state || '',
+            pincode: a.postcode || '',
+            lat: parseFloat(r.lat),
+            lng: parseFloat(r.lon)
+          };
+        });
 
         setSuggestions(results);
       } catch {
@@ -69,28 +66,24 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
     }, 350);
   }, [search]);
 
-  // ── GPS detect ──────────────────────────────────────────────────────────
+  // ── GPS detect → Center Map Confirmation instead of saving directly ─────────
   const detectGPS = async () => {
     if (!navigator.geolocation) return;
     setDetecting(true);
     navigator.geolocation.getCurrentPosition(
       async ({ coords: { latitude: lat, longitude: lng } }) => {
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`
-          );
-          const d  = await res.json();
-          const a  = d.address || {};
-          const city = a.city || a.town || a.village || a.county || '';
-          const area = a.suburb || a.neighbourhood || '';
-          onSelect({ city, area, lat, lng });
-          onClose();
-        } catch { /* ignore */ }
         setDetecting(false);
+        setMapCoords({ lat, lng });
+        setShowMap(true);
       },
       () => setDetecting(false),
       { timeout: 8000, enableHighAccuracy: true }
     );
+  };
+
+  const handleSelectSuggestion = (s) => {
+    setMapCoords({ lat: s.lat, lng: s.lng });
+    setShowMap(true);
   };
 
   if (!isOpen) return null;
@@ -112,7 +105,7 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
         {/* Header */}
         <div style={{ padding: '16px 20px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
           <div>
-            <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--navy)' }}>{t('changeLocation')}</h3>
+            <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--navy)' }}>Select your location</h3>
             {currentCity && <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t('currentLocation')}: {currentCity}</p>}
           </div>
           <button onClick={onClose} style={{ background: '#f3f4f6', border: 'none', borderRadius: 8, padding: 6, cursor: 'pointer', display: 'flex' }}>
@@ -121,7 +114,7 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
         </div>
 
         {/* Body */}
-        <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
+        <div style={{ padding: '16px 20px 32px', overflowY: 'auto', flex: 1 }}>
           {/* Search input */}
           <div style={{ display: 'flex', alignItems: 'center', background: '#f3f4f6', borderRadius: 12, padding: '0 14px', gap: 10, marginBottom: 16, border: '1.5px solid transparent', transition: 'border-color 0.2s' }}
             onFocus={e => e.currentTarget.style.borderColor = 'var(--navy)'}
@@ -132,7 +125,7 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
               ref={inputRef}
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder={t('searchCity')}
+              placeholder="Search city, town, village or street…"
               style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', padding: '13px 0', fontSize: 15 }}
             />
             {loading && <Loader size={14} color="#9ca3af" style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />}
@@ -153,7 +146,7 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
           </button>
 
           {/* Pin on Map */}
-          <button onClick={() => setShowMap(true)}
+          <button onClick={() => { setMapCoords(null); setShowMap(true); }}
             style={{ width: '100%', padding: '13px 16px', borderRadius: 12, border: '1.5px solid var(--border)', background: 'white', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 20 }}
           >
             <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -165,22 +158,27 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
             </div>
           </button>
 
-          {/* Suggestions */}
+          {/* Suggestions - Matching fourth screenshot exactly */}
           {suggestions.length > 0 && (
             <div>
-              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Suggestions</p>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 10px' }}>Search Results</p>
               {suggestions.map((s, i) => (
                 <button
                   key={i}
-                  onClick={() => { onSelect(s); onClose(); }}
-                  style={{ width: '100%', padding: '12px 0', display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer', borderBottom: i < suggestions.length - 1 ? '1px solid var(--border)' : 'none' }}
+                  onClick={() => handleSelectSuggestion(s)}
+                  style={{ width: '100%', padding: '14px 0', display: 'flex', alignItems: 'flex-start', gap: 12, background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px solid #f3f4f6', textAlign: 'left' }}
                 >
-                  <MapPin size={16} color="var(--navy)" style={{ flexShrink: 0 }} />
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{s.city}</p>
-                    {s.display !== s.city && <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{s.display}</p>}
+                  <div style={{ background: '#f3f4f6', padding: 8, borderRadius: '50%', color: '#9ca3af', display: 'flex', flexShrink: 0, marginTop: 2 }}>
+                    <MapPin size={16} />
                   </div>
-                  <ChevronRight size={14} color="#d1d5db" />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: '#1a2b5f', margin: '0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {s.primary}
+                    </p>
+                    <p style={{ fontSize: 11, color: '#9ca3af', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {s.secondary}
+                    </p>
+                  </div>
                 </button>
               ))}
             </div>
@@ -189,16 +187,18 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
           {search.length >= 2 && suggestions.length === 0 && !loading && (
             <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)' }}>
               <p style={{ fontSize: 14 }}>No results for "{search}"</p>
-              <p style={{ fontSize: 12, marginTop: 4 }}>Try a different spelling or nearby city</p>
+              <p style={{ fontSize: 12, marginTop: 4 }}>Try a different spelling or nearby address</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Map Pin Picker */}
+      {/* Map Pin Picker Modal centered on coordinates */}
       <MapPinPicker
         isOpen={showMap}
         onClose={() => setShowMap(false)}
+        initialLat={mapCoords?.lat}
+        initialLng={mapCoords?.lng}
         onConfirm={(loc) => { onSelect(loc); setShowMap(false); onClose(); }}
       />
     </div>

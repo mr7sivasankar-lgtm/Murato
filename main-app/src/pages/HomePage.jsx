@@ -121,6 +121,20 @@ export default function HomePage() {
     } catch {}
     return user?.location?.city || '';
   });
+  const [displayPrimary, setDisplayPrimary] = useState(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem('myillo_location') || 'null');
+      if (cached) return cached.primary || cached.city || '';
+    } catch {}
+    return user?.location?.street || user?.location?.city || '';
+  });
+  const [displaySecondary, setDisplaySecondary] = useState(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem('myillo_location') || 'null');
+      if (cached) return cached.secondary || '';
+    } catch {}
+    return user?.location?.fullAddress || '';
+  });
   const [displayCoords, setDisplayCoords] = useState(() => {
     try {
       const cached = JSON.parse(localStorage.getItem('myillo_location') || 'null');
@@ -234,8 +248,10 @@ export default function HomePage() {
     const handler = () => {
       try {
         const cached = JSON.parse(localStorage.getItem('myillo_location') || 'null');
-        if (cached?.city) {
-          setDisplayCity(cached.city);
+        if (cached) {
+          setDisplayCity(cached.city || '');
+          setDisplayPrimary(cached.primary || cached.city || '');
+          setDisplaySecondary(cached.secondary || '');
           if (cached.coords) setDisplayCoords(cached.coords);
           setLocLoading(false);
         }
@@ -287,23 +303,56 @@ export default function HomePage() {
     if (searchQuery.trim()) navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
   };
 
-  const handleLocationSelect = ({ city, area, lat, lng }) => {
+  const handleLocationSelect = (place) => {
+    const city = place.city || '';
+    const area = place.area || '';
+    const lat = place.lat;
+    const lng = place.lng;
+
     setDisplayCity(city);
+    setDisplayPrimary(place.primary || place.street || city);
+    setDisplaySecondary(place.secondary || place.fullAddress || '');
+
     const coords = (lat && lng) ? [parseFloat(lng), parseFloat(lat)] : null;
     if (coords) setDisplayCoords(coords);
+
     // Save manual selection to cache (1 hour TTL)
     localStorage.setItem('myillo_location', JSON.stringify({
-      city, coords, ts: Date.now() - (9 * 60 * 1000), // 1 min remaining before refresh
+      city,
+      coords,
+      primary: place.primary || place.street || city,
+      secondary: place.secondary || place.fullAddress || '',
+      ts: Date.now() - (9 * 60 * 1000), // 1 min remaining before refresh
     }));
+
     if (updateUser) {
       updateUser({ 
         location: { 
           ...user?.location, 
-          city, area,
+          city,
+          area,
+          street: place.street || '',
+          doorNo: place.doorNo || '',
+          state: place.state || '',
+          pincode: place.pincode || '',
+          fullAddress: place.fullAddress || '',
           coordinates: coords || user?.location?.coordinates,
         } 
       });
     }
+
+    // Save location to backend profile
+    api.put('/auth/profile', {
+      city,
+      area,
+      street: place.street || '',
+      doorNo: place.doorNo || '',
+      state: place.state || '',
+      pincode: place.pincode || '',
+      fullAddress: place.fullAddress || '',
+      lat,
+      lng
+    }).catch(() => {});
   };
 
   return (
@@ -316,24 +365,29 @@ export default function HomePage() {
           {/* Left: Location (clickable → opens picker) */}
           <button
             onClick={() => setShowLocPicker(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
           >
-            <MapPin size={18} color="var(--navy)" strokeWidth={2.5} />
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('locationLabel')}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                {locLoading
-                  ? <><Loader size={10} style={{ animation: 'spin 1s linear infinite' }} /> {t('detecting')}</>
-                  : <>{displayCity || t('setLocation')} <ChevronRight size={10} /></>
-                }
+            <MapPin size={20} color="var(--navy)" strokeWidth={2.5} />
+            <div style={{ textAlign: 'left', minWidth: 0, maxWidth: 220 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {locLoading ? (
+                  <><Loader size={12} style={{ animation: 'spin 1s linear infinite' }} /> {t('detecting')}</>
+                ) : (
+                  <>{displayPrimary || t('setLocation')} <ChevronRight size={12} /></>
+                )}
               </div>
+              {!locLoading && displaySecondary && (
+                <div style={{ fontSize: 10, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>
+                  {displaySecondary}
+                </div>
+              )}
             </div>
           </button>
 
           {/* Center: Brand - Removed as requested */}
           <span style={{ fontSize: 22, fontWeight: 900, color: 'var(--navy)', letterSpacing: '-0.5px' }}></span>
 
-          {/* Right: greeting in pineapple yellow */}
+          {/* Right: greeting in pineapple yellow (Hi single character 👋) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{
               background: '#FFBB00', color: '#1a2b5f',
@@ -341,7 +395,7 @@ export default function HomePage() {
               fontSize: 13, fontWeight: 900, letterSpacing: 0.2,
               whiteSpace: 'nowrap',
             }}>
-              Hi {user?.name || 'User'} 👋
+              Hi {(user?.name || 'User')[0].toUpperCase()} 👋
             </div>
           </div>
         </div>
