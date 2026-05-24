@@ -7,9 +7,23 @@ const Shop = require('../models/Shop');
 const Chat = require('../models/Chat');
 const Banner = require('../models/Banner');
 const LocationService = require('../models/LocationService');
+const AppSettings = require('../models/AppSettings');
 const DeletedRecord = require('../models/DeletedRecord');
 const { adminProtect } = require('../middleware/auth');
 const { upload, uploadToCloudinary } = require('../middleware/upload');
+
+// Seed default settings on first run (idempotent)
+async function seedDefaultSettings() {
+  try {
+    await AppSettings.updateOne(
+      { key: 'searchRadius' },
+      { $setOnInsert: { key: 'searchRadius', value: 25, label: 'Search Radius (km)' } },
+      { upsert: true }
+    );
+  } catch (_) {}
+}
+seedDefaultSettings();
+
 
 // @GET /api/admin/stats
 router.get('/stats', adminProtect, async (req, res) => {
@@ -564,6 +578,38 @@ router.put('/credentials', adminProtect, async (req, res) => {
     );
 
     res.json({ message: 'Admin credentials updated successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ===================== APP SETTINGS =====================
+
+// @GET /api/admin/settings — return all settings as a flat object
+router.get('/settings', adminProtect, async (req, res) => {
+  try {
+    const settings = await AppSettings.find();
+    const result = {};
+    settings.forEach(s => { result[s.key] = { value: s.value, label: s.label }; });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @PUT /api/admin/settings — upsert a setting by key
+router.put('/settings', adminProtect, async (req, res) => {
+  try {
+    const { key, value, label } = req.body;
+    if (!key) return res.status(400).json({ message: 'key is required' });
+    const update = { value };
+    if (label !== undefined) update.label = label;
+    const setting = await AppSettings.findOneAndUpdate(
+      { key },
+      { $set: update },
+      { new: true, upsert: true }
+    );
+    res.json(setting);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

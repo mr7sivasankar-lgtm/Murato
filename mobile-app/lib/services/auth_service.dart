@@ -111,14 +111,20 @@ class AuthService {
   static Future<void> saveLocation({
     required String city,
     String? area,
+    String? street,
+    String? state,
     String? pincode,
+    String? fullAddress,
     double? lat,
     double? lng,
   }) async {
     final token = await getToken();
     final body = <String, dynamic>{'city': city};
-    if (area != null && area.isNotEmpty) body['area'] = area;
-    if (pincode != null && pincode.isNotEmpty) body['pincode'] = pincode;
+    if (area        != null && area.isNotEmpty)        body['area']        = area;
+    if (street      != null && street.isNotEmpty)      body['street']      = street;
+    if (state       != null && state.isNotEmpty)       body['state']       = state;
+    if (pincode     != null && pincode.isNotEmpty)     body['pincode']     = pincode;
+    if (fullAddress != null && fullAddress.isNotEmpty) body['fullAddress'] = fullAddress;
     if (lat != null && lng != null) {
       body['lat'] = lat;
       body['lng'] = lng;

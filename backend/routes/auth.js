@@ -179,8 +179,8 @@ router.put('/profile', protect, upload.single('avatar'), async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     const {
-      name, city, area, pincode, lat, lng,
-      businessName, contactMode, whatsappAvailable,
+      name, city, area, street, state, pincode, lat, lng,
+      fullAddress, businessName, contactMode, whatsappAvailable,
     } = req.body;
 
     if (name)         user.name         = name;
@@ -189,12 +189,15 @@ router.put('/profile', protect, upload.single('avatar'), async (req, res) => {
     if (whatsappAvailable !== undefined)
       user.whatsappAvailable = whatsappAvailable === 'true' || whatsappAvailable === true;
 
-    if (city || area || pincode) {
+    if (city || area || street || state || pincode || fullAddress) {
       const existing = user.location || {};
       user.location = {
-        city:        city || existing.city || '',
-        area:        area || existing.area || '',
-        pincode:     pincode || existing.pincode || '',
+        city:        city        || existing.city        || '',
+        area:        area        || existing.area        || '',
+        street:      street      || existing.street      || '',
+        state:       state       || existing.state       || '',
+        pincode:     pincode     || existing.pincode     || '',
+        fullAddress: fullAddress || existing.fullAddress || '',
         coordinates: lat && lng ? [parseFloat(lng), parseFloat(lat)] : (existing.coordinates || []),
       };
     }

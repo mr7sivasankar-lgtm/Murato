@@ -39,6 +39,14 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Update location only (home screen location picker) ───────────────────
+
+  void updateLocation(Map<String, dynamic> locationData) {
+    if (_user == null) return;
+    _user = {..._user!, 'location': locationData};
+    notifyListeners();
+  }
+
   // ── Logout ────────────────────────────────────────────────────────────────
 
   Future<void> logout() async {

@@ -11,10 +11,11 @@ class AppColors {
   static const Color navyLight = Color(0xFF243680);
 
   // Accent
-  static const Color yellow    = Color(0xFFf5c518);
-  static const Color yellowDark= Color(0xFFe0b200);
-  static const Color orange    = Color(0xFFe87e04);
+  static const Color yellow     = Color(0xFFf5c518);
+  static const Color yellowDark = Color(0xFFe0b200);
+  static const Color orange     = Color(0xFFe87e04);
   static const Color orangeLight= Color(0xFFf5a623);
+  static const Color pineapple  = Color(0xFFFFBB00);  // highlight for user/business names
 
   // Backgrounds
   static const Color bg        = Color(0xFFF4F2FF);

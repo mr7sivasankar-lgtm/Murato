@@ -10,7 +10,10 @@ const userSchema = new mongoose.Schema(
     location: {
       city:        { type: String, default: '' },
       area:        { type: String, default: '' },
+      street:      { type: String, default: '' },   // thoroughfare / road name
+      state:       { type: String, default: '' },   // administrative area
       pincode:     { type: String, default: '' },
+      fullAddress: { type: String, default: '' },   // formatted full address string
       coordinates: { type: [Number], default: [0, 0] }, // [lng, lat]
     },
 

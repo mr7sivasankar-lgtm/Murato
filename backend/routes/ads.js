@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Ad = require('../models/Ad');
 const Favorite = require('../models/Favorite');
+const AppSettings = require('../models/AppSettings');
 const { protect } = require('../middleware/auth');
 const { upload, uploadToCloudinary } = require('../middleware/upload');
 
@@ -50,10 +51,21 @@ router.get('/', async (req, res) => {
     const {
       q, category, subcategory, type, city,
       minPrice, maxPrice, brand, negotiable,
-      lat, lng, radius = 20,          // radius in km
+      lat, lng, radius,          // radius in km (optional — admin-configurable default)
       page = 1, limit = 20,
       sortBy,
     } = req.query;
+
+    // Use provided radius, or fall back to admin-configured default (default 25 km)
+    let activeRadius = radius ? Number(radius) : null;
+    if (activeRadius === null) {
+      try {
+        const radiusSetting = await AppSettings.findOne({ key: 'searchRadius' });
+        activeRadius = radiusSetting ? Number(radiusSetting.value) : 25;
+      } catch (_) {
+        activeRadius = 25;
+      }
+    }
 
     const filter = { status: 'active' };
 
@@ -88,7 +100,7 @@ router.get('/', async (req, res) => {
       filter['location.coordinates'] = {
         $nearSphere: {
           $geometry: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
-          $maxDistance: Number(radius) * 1000, // metres
+          $maxDistance: activeRadius * 1000, // metres
         },
       };
     } else if (city) {

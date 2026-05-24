@@ -2,6 +2,11 @@
 // Backend: https://murato.onrender.com/api (from main-app/.env)
 
 class ApiConfig {
+  // ── Google Maps / Places API Key ───────────────────────────────────────
+  // TODO: Replace with the same key from android/app/src/main/AndroidManifest.xml
+  // Also enable "Places API" in Google Cloud Console for the same project.
+  static const String googleMapsApiKey = 'YOUR_GOOGLE_MAPS_API_KEY';
+
   // ── Base ──────────────────────────────────────────────────────────────────
   static const String baseUrl = 'https://murato.onrender.com/api';
 

@@ -70,6 +70,23 @@ class _AdDetailScreenState extends State<AdDetailScreen> {
     if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
+  Future<void> _openMap(Map<String, dynamic> loc) async {
+    final coords = loc['coordinates'] as List<dynamic>? ?? [];
+    final lat = coords.length >= 2 ? coords[1] : null;
+    final lng = coords.length >= 2 ? coords[0] : null;
+    final city = loc['city'] as String? ?? '';
+
+    Uri uri;
+    if (lat != null && lng != null && (lat != 0 || lng != 0)) {
+      uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    } else if (city.isNotEmpty) {
+      uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(city)}');
+    } else {
+      return;
+    }
+    if (await canLaunchUrl(uri)) launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
   void _snack(String m) => ScaffoldMessenger.of(context)
       .showSnackBar(SnackBar(content: Text(m), behavior: SnackBarBehavior.floating));
 
@@ -116,7 +133,7 @@ class _AdDetailScreenState extends State<AdDetailScreen> {
                         style: const TextStyle(fontSize: 60))))
                   : PageView.builder(
                       itemCount: images.length,
-                      onPageChanged: (_) {}, // index used for dots only in hero — kept simple
+                      onPageChanged: (_) {},
                       itemBuilder: (_, i) => CachedNetworkImage(
                         imageUrl: images[i] as String, fit: BoxFit.cover)),
             ),
@@ -126,7 +143,7 @@ class _AdDetailScreenState extends State<AdDetailScreen> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
-                  _chip(isService ? '🔧 Service' : '📦 Product',
+                  _chip(isService ? '🔧 Service' : '📦 Material',
                     isService ? AppColors.navy : AppColors.yellow,
                     isService ? AppColors.white : AppColors.navyDark),
                   const SizedBox(width: 8),
@@ -151,7 +168,9 @@ class _AdDetailScreenState extends State<AdDetailScreen> {
                     style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary, height: 1.5)),
                   const SizedBox(height: 16),
                 ],
-                _detailsCard(ad, loc),
+                _detailsCard(ad),
+                const SizedBox(height: 16),
+                _locationCard(loc),
                 const SizedBox(height: 16),
                 _sellerCard(seller),
               ]),
@@ -201,14 +220,13 @@ class _AdDetailScreenState extends State<AdDetailScreen> {
     );
   }
 
-  Widget _detailsCard(Map<String, dynamic> ad, Map<String, dynamic> loc) {
+  // ── Details card (brand, condition, etc.) ────────────────────────────────
+  Widget _detailsCard(Map<String, dynamic> ad) {
     final rows = <MapEntry<String, String>>[];
     void add(String k, dynamic v) { if (v != null && v.toString().isNotEmpty) rows.add(MapEntry(k, v.toString())); }
-    add('Brand', ad['brand']); add('Condition', ad['condition']);
+    add('Brand', ad['brand']);
+    add('Condition', ad['condition']);
     add('Experience', ad['experienceYears'] != null ? '${ad['experienceYears']} yrs' : null);
-    final city = loc['city'] as String? ?? '';
-    final area = loc['area'] as String? ?? '';
-    add('Location', [city, area].where((s) => s.isNotEmpty).join(', '));
     if (ad['deliveryAvailable'] == true) rows.add(const MapEntry('Delivery', 'Available'));
     if (rows.isEmpty) return const SizedBox();
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -229,6 +247,110 @@ class _AdDetailScreenState extends State<AdDetailScreen> {
     ]);
   }
 
+  // ── Location card — full address + map link ───────────────────────────────
+  Widget _locationCard(Map<String, dynamic> loc) {
+    final parts = <String>[];
+    void addPart(String? v) { if (v != null && v.isNotEmpty) parts.add(v); }
+
+    // Build a human-friendly address from richest to fallback
+    final fullAddress = loc['fullAddress'] as String? ?? '';
+    final street  = loc['street'] as String? ?? '';
+    final area    = loc['area'] as String? ?? '';
+    final city    = loc['city'] as String? ?? '';
+    final state   = loc['state'] as String? ?? '';
+    final pincode = loc['pincode'] as String? ?? '';
+
+    final coords  = loc['coordinates'] as List<dynamic>? ?? [];
+    final hasCoords = coords.length >= 2 &&
+        (coords[0] as num? ?? 0) != 0 && (coords[1] as num? ?? 0) != 0;
+
+    // Display string
+    if (fullAddress.isNotEmpty) {
+      addPart(fullAddress);
+    } else {
+      addPart(street);
+      addPart(area);
+      addPart(city);
+      addPart(state);
+      if (pincode.isNotEmpty) parts.add(pincode);
+    }
+
+    if (parts.isEmpty && !hasCoords) return const SizedBox();
+
+    final displayAddr = fullAddress.isNotEmpty
+        ? fullAddress
+        : parts.join(', ');
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('Location', style: _secTitle()),
+      const SizedBox(height: 8),
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Address rows
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Icon(Icons.location_on, size: 18, color: AppColors.navy),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                displayAddr.isNotEmpty ? displayAddr : city.isNotEmpty ? city : 'Location not specified',
+                style: GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary, height: 1.5),
+              ),
+            ),
+          ]),
+          // Individual fields (shown only if fullAddress is not available)
+          if (fullAddress.isEmpty) ...[
+            if (city.isNotEmpty || state.isNotEmpty || pincode.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              const Divider(height: 1),
+              const SizedBox(height: 10),
+              _locRow(Icons.location_city_outlined, 'City / Town', city.isNotEmpty ? city : '—'),
+              if (state.isNotEmpty) _locRow(Icons.map_outlined, 'State', state),
+              if (pincode.isNotEmpty) _locRow(Icons.pin_outlined, 'Pincode', pincode),
+            ],
+          ],
+          // View on Map button
+          if (hasCoords || city.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () => _openMap(loc),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F3FC),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Icon(Icons.map_rounded, size: 16, color: AppColors.navy),
+                  const SizedBox(width: 6),
+                  Text('View on Google Maps',
+                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.navy)),
+                ]),
+              ),
+            ),
+          ],
+        ]),
+      ),
+    ]);
+  }
+
+  Widget _locRow(IconData icon, String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(children: [
+      Icon(icon, size: 14, color: AppColors.textMuted),
+      const SizedBox(width: 6),
+      Text(label, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+      const Spacer(),
+      Text(value, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+    ]),
+  );
+
+  // ── Seller card — pineapple name ─────────────────────────────────────────
   Widget _sellerCard(Map<String, dynamic> seller) {
     final name   = seller['businessName'] as String? ?? seller['name'] as String? ?? 'Seller';
     final avatar = seller['avatar'] as String?;
@@ -249,7 +371,13 @@ class _AdDetailScreenState extends State<AdDetailScreen> {
                 style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)) : null),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(name, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+              // Pineapple-highlighted name
+              Text(name,
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.pineapple,
+                )),
               if (count > 0) Row(children: [
                 const Icon(Icons.star, size: 13, color: AppColors.yellow),
                 const SizedBox(width: 3),
