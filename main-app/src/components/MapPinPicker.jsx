@@ -251,10 +251,6 @@ export default function MapPinPicker({ isOpen, onClose, onConfirm, initialLat, i
         {/* Handle */}
         <div style={{ width: 40, height: 4, background: '#e5e7eb', borderRadius: 4, margin: '0 auto 14px' }} />
         
-        <p style={{ fontSize: 11, fontWeight: 800, color: '#9ca3af', letterSpacing: 0.8, textTransform: 'uppercase', margin: '0 0 8px' }}>
-          Order will be delivered here
-        </p>
-
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 20 }}>
           <div style={{ background: '#eff6ff', padding: 8, borderRadius: '50%', color: '#2563eb', flexShrink: 0 }}>
             <MapPin size={20} fill="#2563eb" color="white" />

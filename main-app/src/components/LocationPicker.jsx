@@ -23,7 +23,7 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
     }
   }, [isOpen]);
 
-  // ── Debounced Fuzzy Nominatim search ──────────────────────────────────────────
+  // ── Debounced Fuzzy Nominatim search (with fallback spelling correction) ───────
   useEffect(() => {
     clearTimeout(debounceRef.current);
     if (search.trim().length < 2) { setSuggestions([]); return; }
@@ -31,18 +31,10 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        // High limit fuzzy search over India
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(search)}&format=json&limit=10&addressdetails=1&accept-language=en&countrycodes=in`
-        );
-        const data = await res.json();
-
-        // Extract primary and secondary components like Google Places Autocomplete suggestions
-        const results = data.map(r => {
+        const parseResults = (data) => data.map(r => {
           const a = r.address || {};
           const primary = a.road || a.suburb || a.neighbourhood || a.village || a.town || a.city || r.display_name.split(',')[0];
           const secondary = r.display_name.split(',').slice(1).join(',').trim();
-          
           return {
             primary,
             secondary,
@@ -53,17 +45,43 @@ export default function LocationPicker({ isOpen, onClose, onSelect, currentCity 
             state: a.state || '',
             pincode: a.postcode || '',
             lat: parseFloat(r.lat),
-            lng: parseFloat(r.lon)
+            lng: parseFloat(r.lon),
           };
         });
 
-        setSuggestions(results);
+        const nominatim = async (q) => {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=10&addressdetails=1&accept-language=en&countrycodes=in`,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          return res.json();
+        };
+
+        // 1️⃣ Try the query exactly as typed
+        let data = await nominatim(search.trim());
+
+        // 2️⃣ If empty, try dropping the last character (handles "nellure" → "nellur" → Nellore family)
+        if (!data.length && search.trim().length > 3) {
+          data = await nominatim(search.trim().slice(0, -1));
+        }
+
+        // 3️⃣ If still empty, drop last 2 chars (handles "nellure" → "nellu" area)
+        if (!data.length && search.trim().length > 4) {
+          data = await nominatim(search.trim().slice(0, -2));
+        }
+
+        // 4️⃣ Last resort: try the first 4 characters as a broad prefix search
+        if (!data.length && search.trim().length >= 4) {
+          data = await nominatim(search.trim().slice(0, 4));
+        }
+
+        setSuggestions(parseResults(data));
       } catch {
         setSuggestions([]);
       } finally {
         setLoading(false);
       }
-    }, 350);
+    }, 400);
   }, [search]);
 
   // ── GPS detect → Center Map Confirmation instead of saving directly ─────────

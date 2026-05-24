@@ -36,9 +36,31 @@ async function reverseGeocode(lat, lng) {
 }
 
 async function searchPlaces(query) {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=6&accept-language=en&countrycodes=in`;
-  const res  = await fetch(url);
-  return res.json();
+  const nominatim = async (q) => {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=6&accept-language=en&countrycodes=in`;
+    const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    return res.json();
+  };
+
+  // 1️⃣ Try the query exactly as typed
+  let data = await nominatim(query.trim());
+
+  // 2️⃣ If empty, try dropping the last character (handles "nellure" → "nellur" → Nellore)
+  if (!data.length && query.trim().length > 3) {
+    data = await nominatim(query.trim().slice(0, -1));
+  }
+
+  // 3️⃣ If still empty, drop last 2 chars
+  if (!data.length && query.trim().length > 4) {
+    data = await nominatim(query.trim().slice(0, -2));
+  }
+
+  // 4️⃣ Last resort: try the first 4 characters as a broad prefix search
+  if (!data.length && query.trim().length >= 4) {
+    data = await nominatim(query.trim().slice(0, 4));
+  }
+
+  return data;
 }
 
 export default function LocationConfirmModal() {
